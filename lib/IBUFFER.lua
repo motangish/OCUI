@@ -73,15 +73,10 @@ function buffer.drawImage(x, y, img)
   buffer.new:drawImage(x, y, img)
 end
 
-function buffer.draw(x, y, width, height)
+function buffer.draw()
   local compared
-  if x and y and width and height then
-    compared = image.compare(image.crop(x, y, width, height, buffer.old), image.crop(x, y, width, height, buffer.new))
-    compared:draw(x, y)
-  else
-    compared = image.compare(buffer.old, buffer.new)
-    compared:draw(1, 1)
-  end
+  compared = image.compare(buffer.old, buffer.new)
+  compared:draw(1, 1)
   compared = nil
 end
 

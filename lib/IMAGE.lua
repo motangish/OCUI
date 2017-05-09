@@ -67,9 +67,9 @@ function image.compress(imageToCompress)
   local compressedImage = image.new(imageToCompress.name, imageToCompress.width, imageToCompress.height)
   local currBColor, currTColor, mIndex, index, state
   local lX, lY, lWidth, lData = 0, 0, 0, ""
+  local mIndex = 1
   for h = 1, imageToCompress.height do
     for w = 1, imageToCompress.width do
-      mIndex = image.XYToIndex(w, h, imageToCompress.width)
       if not elements[mIndex] and imageToCompress.data[mIndex] ~= -1 then
         currBColor = imageToCompress.data[mIndex + 1]
         currTColor = imageToCompress.data[mIndex + 2]
@@ -95,6 +95,7 @@ function image.compress(imageToCompress)
         end
         lX, lY, lWidth, lData = 0, 0, 0, ""
       end
+      mIndex = mIndex + 1
     end  
   end
   elements = nil
