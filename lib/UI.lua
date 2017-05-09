@@ -37,7 +37,7 @@ local function checkClick(obj, x, y)
 end
 
 local function addObject(toObj, obj)
-	obj.globalX, obj.globalY = toObj.x + obj.x - 1, toObj.y + obj.y - 1
+	obj.globalX, obj.globalY = toObj.globalX + obj.x - 1, toObj.globalY + obj.y - 1
 	table.insert(toObj.objects, obj)
 end
 
@@ -52,9 +52,8 @@ local function checkProperties(x, y, width, height, props)
 end
 
 --  BOX  -------------------------------------------------------------------------------------------------
-local function drawBox(obj, x, y)
+local function drawBox(obj)
 	local newX, newY, symbol = obj.globalX, obj.globalY, " "
-	if x and y then newX, newY = x + obj.x - 1, y + obj.y - 1 end
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.alpha then
 		buffer.fillBlend(newX, newY, obj.width, obj.height, obj.color, obj.args.alpha, obj.args.dPixel)
@@ -70,9 +69,8 @@ function ui.box(x, y, width, height, aColor, args)
 end
 
 --  STANDART BUTTON  -------------------------------------------------------------------------------------
-local function drawStandartButton(obj, x, y)
+local function drawStandartButton(obj)
 	local newX, newY, symbol, bColor, tColor = obj.globalX, obj.globalY, " ", obj.bColor, obj.tColor
-	if x and y then newX, newY = x + obj.x - 1, y + obj.y - 1 end
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.active then
 		bColor = obj.tColor
@@ -101,9 +99,8 @@ function ui.standartButton(x, y, width, height, bColor, tColor, text, args)
 end
 
 --  STANDART TEXBOX  -------------------------------------------------------------------------------------
-local function drawStandartTextbox(obj, x, y)
+local function drawStandartTextbox(obj)
 	local newX, newY, symbol, bColor, tColor = obj.globalX, obj.globalY, " ", obj.bColor, obj.tColor
-	if x and y then newX, newY = x + obj.x - 1, y + obj.y - 1 end
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.active then
 		bColor = obj.tColor
@@ -158,13 +155,13 @@ function ui.standartTextbox(x, y, width, bColor, tColor, title, args)
 end
 
 --  DRAWING  ---------------------------------------------------------------------------------------------
-local function drawObject(obj, x, y)
+local function drawObject(obj)
 	if obj.args.visible and obj.args.enabled then
-		obj:draw(x, y)
+		obj:draw(0, 0)
 		if obj.objects then
 			for i = 1, #obj.objects do
 				if obj.objects[i].args.visible and obj.objects[i].args.enabled then
-					drawObject(obj.objects[i], obj.x, obj.y)
+					drawObject(obj.objects[i], obj.objectsX, obj.objectsY)
 				end
 			end
 		end
@@ -172,7 +169,7 @@ local function drawObject(obj, x, y)
 end
 
 function ui.draw(obj, x, y)
-	if obj then drawObject(obj, x, y) end
+	if obj then drawObject(obj) end
 	buffer.draw(x, y, obj.width, obj.height)
 end
 
