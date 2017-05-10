@@ -168,9 +168,9 @@ local function drawObject(obj)
 	end
 end
 
-function ui.draw(obj, x, y)
+function ui.draw(obj)
 	if obj then drawObject(obj) end
-	buffer.draw(x, y, obj.width, obj.height)
+	buffer.draw(obj.globalX, obj.globalY, obj.width, obj.height)
 end
 
 --  EVENT HANDLING  --------------------------------------------------------------------------------------

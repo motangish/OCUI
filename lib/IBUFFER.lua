@@ -74,8 +74,23 @@ function buffer.drawImage(x, y, img)
 end
 
 function buffer.draw()
-  local compared
-  compared = image.compare(buffer.old, buffer.new)
+  local compared = image.new("compared", buffer.old.width, buffer.old.height)
+  local iP1, iP2
+  for i = 1, #buffer.old.data, 3 do
+    iP1, iP2 = i + 1, i + 2
+    if buffer.old.data[i] ~= buffer.new.data[i] or buffer.old.data[iP1] ~= buffer.new.data[iP1] or buffer.old.data[iP2] ~= buffer.new.data[iP2] then
+      table.insert(compared.data, buffer.new.data[i])
+      table.insert(compared.data, buffer.new.data[iP1])
+      table.insert(compared.data, buffer.new.data[iP2])
+      buffer.old.data[i] = buffer.new.data[i]
+      buffer.old.data[iP1] = buffer.new.data[iP1]
+      buffer.old.data[iP2] = buffer.new.data[iP2]
+    else
+      table.insert(compared.data, -1)
+      table.insert(compared.data, -1)
+      table.insert(compared.data, -1)
+    end
+  end
   compared:draw(1, 1)
   compared = nil
 end

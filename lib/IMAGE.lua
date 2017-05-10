@@ -67,9 +67,9 @@ function image.compress(imageToCompress)
   local compressedImage = image.new(imageToCompress.name, imageToCompress.width, imageToCompress.height)
   local currBColor, currTColor, mIndex, index, state
   local lX, lY, lWidth, lData = 0, 0, 0, ""
-  local mIndex = 1
   for h = 1, imageToCompress.height do
     for w = 1, imageToCompress.width do
+      mIndex = image.XYToIndex(w, h, imageToCompress.width)
       if not elements[mIndex] and imageToCompress.data[mIndex] ~= -1 then
         currBColor = imageToCompress.data[mIndex + 1]
         currTColor = imageToCompress.data[mIndex + 2]
@@ -95,28 +95,11 @@ function image.compress(imageToCompress)
         end
         lX, lY, lWidth, lData = 0, 0, 0, ""
       end
-      mIndex = mIndex + 1
     end  
   end
   elements = nil
   compressedImage.compressed = true
   return compressedImage
-end
-
-function image.compare(old, new)
-  local compared = image.new("compared", old.width, old.height)
-  for i = 1, #old.data, 3 do
-    if old.data[i] ~= new.data[i] or old.data[i + 1] ~= new.data[i + 1] or old.data[i + 2] ~= new.data[i + 2] then
-      table.insert(compared.data, new.data[i])
-      table.insert(compared.data, new.data[i + 1])
-      table.insert(compared.data, new.data[i + 2])
-    else
-      table.insert(compared.data, -1)
-      table.insert(compared.data, -1)
-      table.insert(compared.data, -1)
-    end
-  end
-  return compared
 end
 
 function image.new(name, width, height)
@@ -378,8 +361,7 @@ function image:draw(x, y)
       end
     end
   else
-    self = image.compress(self)
-    self:draw(x, y)
+    image.compress(self):draw(x, y)
   end
 end
 
