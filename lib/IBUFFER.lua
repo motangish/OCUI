@@ -1,4 +1,5 @@
 local image = require("IMAGE")
+local color = require("COLOR")
 local gpu = require("component").gpu
 
 local buffer = {}
@@ -18,6 +19,15 @@ function buffer.initialize(width, height)
   buffer.old = image.new("old", newWidth, newHeight)
   buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
   buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
+end
+
+local function floor(number)
+  local num, subNum = math.modf(number)
+  if subNum >= 0.5 then
+    return num + 1
+  else
+    return num
+  end
 end
 
 local function checkPixel(x, y)
@@ -42,25 +52,52 @@ function buffer.getPixel(x, y)
 end
 
 function buffer.fill(x, y, width, height, symbol, bColor, tColor, dPixel, bit8)
-  local newX, newY, newW, newH = x, y, width, height
-  if x < buffer.drawX then newX = buffer.drawX end
-  if y < buffer.drawY then newY = buffer.drawY end
-  if x + width - 1 > buffer.drawX + buffer.drawW - 1 then newW = buffer.drawW end
-  if y + height - 1 > buffer.drawY + buffer.drawH - 1 then newH = buffer.drawH end
-  buffer.new:fill(newX, newY, newW, newH, symbol, bColor, tColor, dPixel, bit8)
+  local bColor8Bit, tColor8Bit = bColor, tColor
+  if not bit8 then
+    if bColor then bColor8Bit = color.to8Bit(bColor) end
+    if tColor then tColor8Bit = color.to8Bit(tColor) end
+  end
+  local index
+  for h = 1, height do
+    for w = 1, width do
+      if dPixel and checkPixel(x + w - 1, floor((y + h - 1) / 2)) then
+        buffer.new:setDPixel(x + w - 1, y + h - 1, bColor8Bit, true)
+      elseif checkPixel(x + w - 1, y + h - 1) then
+        index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)
+        if symbol then buffer.new.data[index] = symbol end
+        if bColor8Bit then buffer.new.data[index + 1] = bColor8Bit end
+        if tColor8Bit then buffer.new.data[index + 2] = tColor8Bit end
+      end
+    end
+  end
 end
 
 function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
-  local newX, newY, newW, newH = x, y, width, height
-  if x < buffer.drawX then newX = buffer.drawX end
-  if y < buffer.drawY then newY = buffer.drawY end
-  if x + width - 1 > buffer.drawX + buffer.drawW - 1 then newW = buffer.drawW end
-  if dPixel then
-    if math.floor((y + height) / 2) > buffer.drawY + buffer.drawH - 1 then newH = (buffer.drawY + buffer.drawH - 1) * 2 - y + 1 end
-  else
-    if y + height - 1 > buffer.drawY + buffer.drawH - 1 then newH = buffer.drawH end
+  local index
+  for h = 1, height do
+    for w = 1, width do
+      local state = false
+      if dPixel then state = checkPixel(x + w - 1, floor((y + h - 1) / 2)) else state = checkPixel(x + w - 1, y + h - 1) end
+      if state then
+        index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)
+        if dPixel then
+          local index = image.XYToIndex(x + w - 1, floor((y + h - 1) / 2), buffer.new.width)
+          local num, subNum = math.modf((y + h - 1) / 2)
+          if subNum > 0.0 then
+            buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+          else
+            if not buffer.new.data[index + 2] then
+              buffer.new.data[index + 2] = buffer.new.data[index + 1]
+            end
+            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+          end
+        else
+          buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+          buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+        end
+      end
+    end
   end
-  buffer.new:fillBlend(newX, newY, newW, newH, aColor, alpha, dPixel)
 end
 
 function buffer.drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel, bit8)
