@@ -13,20 +13,26 @@ function buffer.initialize(width, height)
   buffer.width = newWidth
   buffer.height = newHeight
   buffer.dHeight = newHeight * 2
+  buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = 1, 1, buffer.width, buffer.height
   buffer.new = image.new("new", newWidth, newHeight)
   buffer.old = image.new("old", newWidth, newHeight)
   buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
   buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
 end
 
+local function checkPixel(x, y)
+  if x >= buffer.drawX and x <= buffer.drawX + buffer.drawW - 1 and y >= buffer.drawY and y <= buffer.drawY + buffer.drawH - 1 then return true end
+  return false
+end
+
 function buffer.setPixel(x, y, symbol, bColor, tColor, bit8)
-  if x > 0 and x <= buffer.width and y > 0 and y <= buffer.height then
+  if checkPixel(x, y) then
     buffer.new:setPixel(x, y, symbol, bColor, tColor, bit8)
   end
 end
 
 function buffer.setDPixel(x, y, color)
-  if x > 0 and x <= buffer.width and y > 0 and y <= buffer.dHeight then
+  if checkPixel(x, math.floor(y / 2)) then
     buffer.new:setDPixel(x, y, color, bit8)
   end
 end
@@ -37,19 +43,23 @@ end
 
 function buffer.fill(x, y, width, height, symbol, bColor, tColor, dPixel, bit8)
   local newX, newY, newW, newH = x, y, width, height
-  if x <= 0 then newX = 1 end
-  if y <= 0 then newY = 1 end
-  if x + width - 1 > buffer.width then newW = buffer.width - x + 1 end
-  if x + height - 1 > buffer.height then newH = buffer.height - y + 1 end
+  if x < buffer.drawX then newX = buffer.drawX end
+  if y < buffer.drawY then newY = buffer.drawY end
+  if x + width - 1 > buffer.drawX + buffer.drawW - 1 then newW = buffer.drawW end
+  if y + height - 1 > buffer.drawY + buffer.drawH - 1 then newH = buffer.drawH end
   buffer.new:fill(newX, newY, newW, newH, symbol, bColor, tColor, dPixel, bit8)
 end
 
 function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
   local newX, newY, newW, newH = x, y, width, height
-  if x <= 0 then newX = 1 end
-  if y <= 0 then newY = 1 end
-  if x + width - 1 > buffer.width then newW = buffer.width - x + 1 end
-  if y + height - 1 > buffer.height then newH = buffer.height - y + 1 end
+  if x < buffer.drawX then newX = buffer.drawX end
+  if y < buffer.drawY then newY = buffer.drawY end
+  if x + width - 1 > buffer.drawX + buffer.drawW - 1 then newW = buffer.drawW end
+  if dPixel then
+    if math.floor((y + height) / 2) > buffer.drawY + buffer.drawH - 1 then newH = (buffer.drawY + buffer.drawH - 1) * 2 - y + 1 end
+  else
+    if y + height - 1 > buffer.drawY + buffer.drawH - 1 then newH = buffer.drawH end
+  end
   buffer.new:fillBlend(newX, newY, newW, newH, aColor, alpha, dPixel)
 end
 

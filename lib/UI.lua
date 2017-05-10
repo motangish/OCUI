@@ -9,7 +9,8 @@ local ui = {
 	ID = {
 		BOX = 1,
 		STANDART_BUTTON = 2,
-		STANDART_TEXTBOX = 3
+		STANDART_TEXTBOX = 3,
+		STANDART_CHECKBOX = 4
 	}
 }
 
@@ -113,11 +114,14 @@ local function drawStandartTextbox(obj)
 	end
 	local length = unicode.len(obj.text)
 	if length < obj.width then
-		buffer.drawText(newX, newY, nil, tColor, obj.text)
+		if length == 0 then 
+			buffer.drawText(newX, newY, nil, tColor, obj.title)
+		else
+			buffer.drawText(newX, newY, nil, tColor, obj.text)
+		end
     else
         buffer.drawText(newX, newY, nil, tColor, unicode.sub(obj.text, length - (obj.width - 1), -1))
     end
-    --buffer.drawText(newX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(newY + obj.height / 2), nil, tColor, obj.text)
 end
 
 local function writeTextbox(obj)
@@ -136,7 +140,6 @@ local function writeTextbox(obj)
 				ui.draw(obj)
 				break
 			elseif e[4] == 0x0E then -- DELETE
-
 				if obj.text ~= "" then obj.text = unicode.sub(obj.text, 1, -2) end
 				ui.draw(obj)
 			else
@@ -151,6 +154,33 @@ end
 function ui.standartTextbox(x, y, width, bColor, tColor, title, args)
 	return checkProperties(x, y, width, 1, {
 		bColor=bColor, tColor=tColor, text="", title=title, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject
+	})
+end
+
+--  STANDART CHECKBOX  -----------------------------------------------------------------------------------
+local function drawStandartCheckbox(obj)
+	local bColor, tColor, symbol = obj.bColor, obj.tColor, "X"
+	if obj.args.symbol then symbol = obj.args.symbol end
+	if obj.args.active then
+		bColor = obj.tColor
+		tColor = obj.bColor
+	end
+	if not obj.args.checked then symbol = " " end
+	buffer.setPixel(obj.globalX, obj.globalY, symbol, bColor, tColor)
+end
+
+local function checkCheckbox(obj, delay)
+	obj.args.active = true
+	ui.draw(obj)
+	os.sleep(delay or 0.3)
+	obj.args.active = false
+ 	if obj.args.checked then obj.args.checked = false else obj.args.checked = true end
+	ui.draw(obj)
+end
+
+function ui.standartCheckbox(x, y, bColor, tColor, args)
+	return checkProperties(x, y, 1, 1, {
+		bColor=bColor, tColor=tColor, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject
 	})
 end
 
@@ -181,17 +211,20 @@ function ui.handleEvents(obj, args)
 		local e = {event.pull()}
 		local clickedObj
 		if e[3] and e[4] then clickedObj = checkClick(obj, e[3], e[4]) end
-		if e[1] == "touch" then
-			if clickedObj.id == ui.ID.STANDART_BUTTON then clickedObj:flash() 
-			elseif clickedObj.id == ui.ID.STANDART_TEXTBOX then clickedObj:write() end
-			if clickedObj and clickedObj.touch then clickedObj.touch() end
-			if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
-		elseif e[1] == "drag" then
-			if clickedObj and clickedObj.drag then clickedObj.drag() end
-			if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
-		elseif e[1] == "scroll" then
-			if clickedObj and clickedObj.scroll then clickedObj.scroll() end
-			if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
+		if clickedObj then
+			if e[1] == "touch" then
+				if clickedObj.id == ui.ID.STANDART_BUTTON then clickedObj:flash() 
+				elseif clickedObj.id == ui.ID.STANDART_TEXTBOX then clickedObj:write() 
+				elseif clickedObj.id == ui.ID.STANDART_CHECKBOX then clickedObj:check() end
+				if clickedObj and clickedObj.touch then clickedObj.touch() end
+				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
+			elseif e[1] == "drag" then
+				if clickedObj and clickedObj.drag then clickedObj.drag() end
+				if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
+			elseif e[1] == "scroll" then
+				if clickedObj and clickedObj.scroll then clickedObj.scroll() end
+				if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
+			end
 		end
 	end
 end
