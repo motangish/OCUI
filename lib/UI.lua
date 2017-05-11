@@ -10,7 +10,8 @@ local ui = {
 		BOX = 1,
 		STANDART_BUTTON = 2,
 		STANDART_TEXTBOX = 3,
-		STANDART_CHECKBOX = 4
+		STANDART_CHECKBOX = 4,
+		SCROLLBAR = 5
 	}
 }
 
@@ -53,13 +54,13 @@ local function checkProperties(x, y, width, height, props)
 end
 
 --  BOX  -------------------------------------------------------------------------------------------------
-local function drawBox(obj)
-	local newX, newY, symbol = obj.globalX, obj.globalY, " "
+local function drawBox(obj, x, y)
+	local symbol = " "
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.alpha then
-		buffer.fillBlend(newX, newY, obj.width, obj.height, obj.color, obj.args.alpha, obj.args.dPixel)
+		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, obj.color, obj.args.alpha, obj.args.dPixel)
 	else
-		buffer.fill(newX, newY, obj.width, obj.height, symbol, obj.color, nil, obj.args.dPixel)
+		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, obj.color, nil, obj.args.dPixel)
 	end
 end
 
@@ -71,18 +72,18 @@ end
 
 --  STANDART BUTTON  -------------------------------------------------------------------------------------
 local function drawStandartButton(obj)
-	local newX, newY, symbol, bColor, tColor = obj.globalX, obj.globalY, " ", obj.bColor, obj.tColor
+	local symbol, bColor, tColor = " ", obj.bColor, obj.tColor
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.active then
 		bColor = obj.tColor
 		tColor = obj.bColor
 	end
 	if obj.args.alpha then
-		buffer.fillBlend(newX, newY, obj.width, obj.height, bColor, obj.args.alpha, obj.args.dPixel)
+		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, obj.args.dPixel)
 	else
-		buffer.fill(newX, newY, obj.width, obj.height, symbol, bColor, nil, obj.args.dPixel)
+		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil, obj.args.dPixel)
 	end
-    buffer.drawText(newX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(newY + obj.height / 2), nil, tColor, obj.text)
+    buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
 end
 
 local function flashButton(obj, delay)
@@ -101,26 +102,26 @@ end
 
 --  STANDART TEXBOX  -------------------------------------------------------------------------------------
 local function drawStandartTextbox(obj)
-	local newX, newY, symbol, bColor, tColor = obj.globalX, obj.globalY, " ", obj.bColor, obj.tColor
+	local symbol, bColor, tColor = " ", obj.bColor, obj.tColor
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.active then
 		bColor = obj.tColor
 		tColor = obj.bColor
 	end
 	if obj.args.alpha then
-		buffer.fillBlend(newX, newY, obj.width, obj.height, bColor, obj.args.alpha, obj.args.dPixel)
+		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, obj.args.dPixel)
 	else
-		buffer.fill(newX, newY, obj.width, obj.height, symbol, bColor, nil, obj.args.dPixel)
+		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil, obj.args.dPixel)
 	end
 	local length = unicode.len(obj.text)
 	if length < obj.width then
 		if length == 0 then 
-			buffer.drawText(newX, newY, nil, tColor, obj.title)
+			buffer.drawText(obj.globalX, obj.globalY, nil, tColor, obj.title)
 		else
-			buffer.drawText(newX, newY, nil, tColor, obj.text)
+			buffer.drawText(obj.globalX, obj.globalY, nil, tColor, obj.text)
 		end
     else
-        buffer.drawText(newX, newY, nil, tColor, unicode.sub(obj.text, length - (obj.width - 1), -1))
+        buffer.drawText(obj.globalX, obj.globalY, nil, tColor, unicode.sub(obj.text, length - (obj.width - 1), -1))
     end
 end
 
@@ -184,14 +185,55 @@ function ui.standartCheckbox(x, y, bColor, tColor, args)
 	})
 end
 
+--  SCROLLBAR  -------------------------------------------------------------------------------------------
+local function drawScrollbar(obj)
+	local bColor, tColor = obj.bColor, obj.tColor
+	buffer.setDrawing(obj.globalX, obj.globalY, obj.width, obj.height)
+	ui.drawObject(obj.object, obj.globalX, obj.globalY)
+	buffer.setDefaultDrawing()
+	local lineHeight = obj.height / (obj.object.height / obj.height)
+	if lineHeight < 1 then lineHeight = 1 end
+	buffer.fill(obj.globalX + obj.width - 1, obj.globalY, 1, obj.height, " ", obj.bColor, nil)
+	buffer.fill(obj.globalX + obj.width - 1, obj.globalY + obj.position - 1, 1, lineHeight, " ", obj.tColor, nil)
+end
+
+local function scrollbarScroll(obj, position, side)
+	if position == -1 then
+		if side == 1 then
+			obj.position = obj.position - 1
+		else
+			obj.position = obj.position + 1
+		end
+	else obj.position = position end
+	local lineHeight = obj.height / (obj.object.height / obj.height)
+	if lineHeight < 1 then lineHeight = 1 end
+	if obj.position + lineHeight - 1 > obj.height then
+		obj.position = obj.height - lineHeight + 1
+	elseif obj.position < 1 then
+		obj.position = 1
+	end
+	obj.object.y = 1 - (obj.position - 1) * (obj.object.height / obj.height)
+	ui.draw(obj)
+end
+
+function ui.scrollbar(x, y, width, height, bColor, tColor, object, args)
+	return checkProperties(x, y, width, height, {
+		bColor=bColor, tColor=tColor, object=object, position=1, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject
+	})
+end
+
 --  DRAWING  ---------------------------------------------------------------------------------------------
-local function drawObject(obj)
+function ui.drawObject(obj, x, y)
+	local newX, newY = x, y
+	if x or y then newX, newY = x + obj.x - 1, y + obj.y - 1
+	else newX, newY = obj.globalX, obj.globalY end
 	if obj.args.visible and obj.args.enabled then
-		obj:draw(0, 0)
+		obj.globalX, obj.globalY = newX, newY
+		obj:draw(newX, newY)
 		if obj.objects then
 			for i = 1, #obj.objects do
 				if obj.objects[i].args.visible and obj.objects[i].args.enabled then
-					drawObject(obj.objects[i], obj.objectsX, obj.objectsY)
+					ui.drawObject(obj.objects[i], newX, newY)
 				end
 			end
 		end
@@ -199,7 +241,7 @@ local function drawObject(obj)
 end
 
 function ui.draw(obj)
-	if obj then drawObject(obj) end
+	if obj then ui.drawObject(obj) end
 	buffer.draw(obj.globalX, obj.globalY, obj.width, obj.height)
 end
 
@@ -216,13 +258,13 @@ function ui.handleEvents(obj, args)
 				if clickedObj.id == ui.ID.STANDART_BUTTON then clickedObj:flash() 
 				elseif clickedObj.id == ui.ID.STANDART_TEXTBOX then clickedObj:write() 
 				elseif clickedObj.id == ui.ID.STANDART_CHECKBOX then clickedObj:check() end
-				if clickedObj and clickedObj.touch then clickedObj.touch() end
+				if clickedObj and clickedObj.touch then clickedObj:touch() end
 				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
-				if clickedObj and clickedObj.drag then clickedObj.drag() end
+				if clickedObj and clickedObj.drag then clickedObj:drag() end
 				if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "scroll" then
-				if clickedObj and clickedObj.scroll then clickedObj.scroll() end
+				if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
 				if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
 			end
 		end

@@ -1,5 +1,6 @@
 local image = require("IMAGE")
 local color = require("COLOR")
+local unicode = require("unicode")
 local gpu = require("component").gpu
 
 local buffer = {}
@@ -33,6 +34,14 @@ end
 local function checkPixel(x, y)
   if x >= buffer.drawX and x <= buffer.drawX + buffer.drawW - 1 and y >= buffer.drawY and y <= buffer.drawY + buffer.drawH - 1 then return true end
   return false
+end
+
+function buffer.setDrawing(x, y, width, height)
+  buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = x, y, width, height
+end
+
+function buffer.setDefaultDrawing()
+  buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = 1, 1, buffer.width, buffer.height
 end
 
 function buffer.setPixel(x, y, symbol, bColor, tColor, bit8)
@@ -112,12 +121,35 @@ function buffer.drawEllipse(x, y, width, height, aColor, dPixel, bit8)
   buffer.new:drawEllipse(x, y, width, height, aColor, dPixel, bit8)
 end
 
-function buffer.drawText(x, y, bColor, tColor, text)
-  buffer.new:drawText(x, y, bColor, tColor, text)
+function buffer.drawText(x, y, bColor, tColor, text, bit8)
+  local index
+  local newBColor, newTColor = bColor, tColor
+  if not bit8 then
+    if bColor then newBColor = color.to8Bit(bColor) end
+    if tColor then newTColor = color.to8Bit(tColor) end
+  end
+  for i = 1, unicode.len(text) do
+    index = image.XYToIndex(x + i - 1, y, buffer.new.width)
+    if checkPixel(x + i - 1, y) then
+      buffer.new.data[index] = unicode.sub(text, i, i)
+      if bColor then buffer.new.data[index + 1] = newBColor end
+      if tColor then buffer.new.data[index + 2] = newTColor end
+    end
+  end
 end
 
 function buffer.drawImage(x, y, img)
-  buffer.new:drawImage(x, y, img)
+  if img.compressed then
+    for bColor, data1 in pairs(img.data) do
+      for tColor, data2 in pairs(data1) do
+        for i = 1, #data2, 3 do
+          buffer.drawText(x + data2[i] - 1, y + data2[i + 1] - 1, bColor, tColor, data2[i + 2], true)
+        end
+      end
+    end
+  else
+    buffer.drawImage(x, y, image.compress(img))
+  end
 end
 
 function buffer.draw()
