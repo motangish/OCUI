@@ -191,8 +191,9 @@ local function drawScrollbar(obj)
 	buffer.setDrawing(obj.globalX, obj.globalY, obj.width, obj.height)
 	ui.drawObject(obj.object, obj.globalX, obj.globalY)
 	buffer.setDefaultDrawing()
-	local lineHeight = obj.height / (obj.object.height / obj.height)
+	local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
 	if lineHeight < 1 then lineHeight = 1 end
+	if lineHeight > obj.height then lineHeight = obj.height end
 	buffer.fill(obj.globalX + obj.width - 1, obj.globalY, 1, obj.height, " ", obj.bColor, nil)
 	buffer.fill(obj.globalX + obj.width - 1, obj.globalY + obj.position - 1, 1, lineHeight, " ", obj.tColor, nil)
 end
@@ -205,20 +206,32 @@ local function scrollbarScroll(obj, position, side)
 			obj.position = obj.position + 1
 		end
 	else obj.position = position end
-	local lineHeight = obj.height / (obj.object.height / obj.height)
+	local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
 	if lineHeight < 1 then lineHeight = 1 end
+	if lineHeight > obj.height then lineHeight = obj.height end
 	if obj.position + lineHeight - 1 > obj.height then
 		obj.position = obj.height - lineHeight + 1
 	elseif obj.position < 1 then
 		obj.position = 1
 	end
-	obj.object.y = 1 - (obj.position - 1) * (obj.object.height / obj.height)
+	obj.object.y = 1 - math.floor((obj.position - 1) * (obj.object.height / obj.height))
 	ui.draw(obj)
 end
 
 function ui.scrollbar(x, y, width, height, bColor, tColor, object, args)
 	return checkProperties(x, y, width, height, {
 		bColor=bColor, tColor=tColor, object=object, position=1, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject
+	})
+end
+
+--  IMAGE  -----------------------------------------------------------------------------------------------
+local function drawImage(obj)
+	buffer.drawImage(obj.globalX, obj.globalY, obj.image)
+end
+
+function ui.image(x, y, data)
+	return checkProperties(x, y, data.width, data.height, {
+		image=data, id=ui.ID.IMAGE, draw=drawImage, addObj=addObject
 	})
 end
 
@@ -266,7 +279,7 @@ function ui.handleEvents(obj, args)
 				if newClickedObj.id == ui.ID.STANDART_BUTTON then newClickedObj:flash() 
 				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX then newClickedObj:write() 
 				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() end
-				if newClickedObj and newClickedObj.touch then clickedObj:touch() end
+				if not clickedObj.object and newClickedObj and newClickedObj.touch then newClickedObj:touch() end
 				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
 				if clickedObj and clickedObj.drag then clickedObj:drag() end
