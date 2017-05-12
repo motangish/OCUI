@@ -20,6 +20,9 @@ function buffer.initialize(width, height)
   buffer.old = image.new("old", newWidth, newHeight)
   buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
   buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
+  gpu.setBackground(0x1C1C1C)
+  gpu.setForeground(0xFFFFFF)
+  gpu.fill(1, 1, newWidth, newHeight, " ")
 end
 
 local function floor(number)

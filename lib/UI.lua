@@ -28,10 +28,10 @@ local function codeToSymbol(code)
   return symbol
 end
 
-local function checkClick(obj, x, y)
-	if x >= obj.globalX and x <= obj.globalX + obj.width - 1 and y >= obj.globalY and y <= obj.globalY + obj.height - 1 then 
+function ui.checkClick(obj, x, y)
+	if x >= obj.globalX and x <= obj.globalX + obj.width - 1 and y >= obj.globalY and y <= obj.globalY + obj.height - 1 then
 		for num, object in pairs(obj.objects) do
-			local clickedObj = checkClick(object, x, y)
+			local clickedObj = ui.checkClick(object, x, y)
 			if clickedObj then return clickedObj end
 		end
 		return obj
@@ -242,7 +242,7 @@ end
 
 function ui.draw(obj)
 	if obj then ui.drawObject(obj) end
-	buffer.draw(obj.globalX, obj.globalY, obj.width, obj.height)
+	buffer.draw()
 end
 
 --  EVENT HANDLING  --------------------------------------------------------------------------------------
@@ -252,13 +252,21 @@ function ui.handleEvents(obj, args)
 	while ui.eventHandling do
 		local e = {event.pull()}
 		local clickedObj
-		if e[3] and e[4] then clickedObj = checkClick(obj, e[3], e[4]) end
+		if e[3] and e[4] then clickedObj = ui.checkClick(obj, e[3], e[4]) end
 		if clickedObj then
 			if e[1] == "touch" then
-				if clickedObj.id == ui.ID.STANDART_BUTTON then clickedObj:flash() 
-				elseif clickedObj.id == ui.ID.STANDART_TEXTBOX then clickedObj:write() 
-				elseif clickedObj.id == ui.ID.STANDART_CHECKBOX then clickedObj:check() end
-				if clickedObj and clickedObj.touch then clickedObj:touch() end
+				local newClickedObj = clickedObj
+				if clickedObj.object then
+					local newClickedObj2 = ui.checkClick(clickedObj.object, e[3], e[4])
+					if newClickedObj2 then
+						newClickedObj = newClickedObj2
+						if newClickedObj2.touch then newClickedObj2:touch() end
+					end
+				end
+				if newClickedObj.id == ui.ID.STANDART_BUTTON then newClickedObj:flash() 
+				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX then newClickedObj:write() 
+				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() end
+				if newClickedObj and newClickedObj.touch then clickedObj:touch() end
 				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
 				if clickedObj and clickedObj.drag then clickedObj:drag() end
