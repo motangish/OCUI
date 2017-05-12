@@ -11,7 +11,8 @@ local ui = {
 		STANDART_BUTTON = 2,
 		STANDART_TEXTBOX = 3,
 		STANDART_CHECKBOX = 4,
-		SCROLLBAR = 5
+		SCROLLBAR = 5,
+		IMAGE = 6
 	}
 }
 
@@ -188,6 +189,7 @@ end
 --  SCROLLBAR  -------------------------------------------------------------------------------------------
 local function drawScrollbar(obj)
 	local bColor, tColor = obj.bColor, obj.tColor
+	buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor)
 	buffer.setDrawing(obj.globalX, obj.globalY, obj.width, obj.height)
 	ui.drawObject(obj.object, obj.globalX, obj.globalY)
 	buffer.setDefaultDrawing()
@@ -216,6 +218,12 @@ local function scrollbarScroll(obj, position, side)
 	end
 	obj.object.y = 1 - math.floor((obj.position - 1) * (obj.object.height / obj.height))
 	ui.draw(obj)
+end
+
+local function checkScrollbarClick(obj, x, y)
+	if x == obj.globalX + obj.width - 1 and y >= obj.globalY + obj.position - 1 and y <= obj.globalY + obj.position + math.floor(obj.height / (obj.object.height / obj.height)) - 2 then
+		return true
+	end
 end
 
 function ui.scrollbar(x, y, width, height, bColor, tColor, object, args)
@@ -279,11 +287,31 @@ function ui.handleEvents(obj, args)
 				if newClickedObj.id == ui.ID.STANDART_BUTTON then newClickedObj:flash() 
 				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX then newClickedObj:write() 
 				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() end
+				if clickedObj.id == ui.ID.SCROLLBAR then
+					if checkScrollbarClick(clickedObj, e[3], e[4]) then
+						clickedObj.scrolling = true
+						clickedObj.scrollingY = e[4] - clickedObj.globalY - clickedObj.position + 2
+					end
+				end
 				if not clickedObj.object and newClickedObj and newClickedObj.touch then newClickedObj:touch() end
 				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
+				if clickedObj.id == ui.ID.SCROLLBAR then
+					if not checkScrollbarClick(clickedObj, e[3], e[4]) then
+						clickedObj.scrolling = false
+						clickedObj.scrollingY = nil
+					end
+					if clickedObj.scrollingY and e[4] - clickedObj.globalY - clickedObj.scrollingY + 2 > 0 then
+						clickedObj:scroll(e[4] - clickedObj.globalY - clickedObj.scrollingY + 2)
+					end
+				end
 				if clickedObj and clickedObj.drag then clickedObj:drag() end
 				if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
+			elseif e[1] == "drop" then
+				if clickedObj.id == ui.ID.SCROLLBAR then
+					clickedObj.scrolling = false
+					clickedObj.scrollingY = nil
+				end
 			elseif e[1] == "scroll" then
 				if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
 				if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
