@@ -12,11 +12,12 @@ local ui = {
 		BOX = 				1,
 		STANDART_BUTTON = 	2,
 		STANDART_TEXTBOX = 	3,
-		STANDART_CHECKBOX = 4,
-		CONTEXT_MENU = 		5,
-		SCROLLBAR = 		6,
-		IMAGE = 			7,
-		CANVAS = 			8
+		BEAUTIFUL_TEXTBOX = 4,
+		STANDART_CHECKBOX = 5,
+		CONTEXT_MENU = 		6,
+		SCROLLBAR = 		7,
+		IMAGE = 			8,
+		CANVAS = 			9
 	}
 }
 
@@ -163,6 +164,37 @@ function ui.standartTextbox(x, y, width, bColor, tColor, title, args)
 	})
 end
 
+--  BEAUTIFUL TEXBOX  ------------------------------------------------------------------------------------
+local function drawBeautifulTextbox(obj)
+	local bColor, tColor = obj.bColor, obj.tColor
+	if obj.args.symbol then symbol = obj.args.symbol end
+	if obj.args.active then
+		bColor = obj.tColor
+		tColor = obj.bColor
+	end
+	if obj.args.alpha then
+		buffer.fillBlend(obj.globalX, obj.globalY * 2, obj.width, 4, bColor, nil, obj.args.alpha, true)
+	else
+		buffer.fill(obj.globalX, obj.globalY * 2, obj.width, 4, " ", bColor, nil, true)
+	end
+	local length = unicode.len(obj.text)
+	if length < obj.width - 2 then
+		if length == 0 then 
+			buffer.drawText(obj.globalX + 1, obj.globalY + 1, nil, tColor, obj.title)
+		else
+			buffer.drawText(obj.globalX + 1, obj.globalY + 1, nil, tColor, obj.text)
+		end
+    else
+        buffer.drawText(obj.globalX + 1, obj.globalY + 1, nil, tColor, unicode.sub(obj.text, length - (obj.width - 3), -1))
+    end
+end
+
+function ui.beautifulTextbox(x, y, width, bColor, tColor, title, args)
+	return checkProperties(x, y, width, 3, {
+		bColor=bColor, tColor=tColor, text="", title=title, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject
+	})
+end
+
 --  STANDART CHECKBOX  -----------------------------------------------------------------------------------
 local function drawStandartCheckbox(obj)
 	local bColor, tColor, symbol = obj.bColor, obj.tColor, "X"
@@ -222,7 +254,7 @@ local function doContextMenu(obj)
 					buffer.drawImage(obj.globalX, obj.globalY, obj.image)
 					obj.showing, state = false, false
 					buffer.draw()
-					if obj.objs[i].func then obj.objs[i].func(obj.objs[i].args)
+					if obj.objs[i].func then obj.objs[i].func(obj.objs[i].args) end
 					break
 				end
 			end
@@ -360,7 +392,7 @@ function ui.handleEvents(obj, args)
 			-- Checking scrollbar object
 			if e[1] == "touch" then
 				if newClickedObj.id == ui.ID.STANDART_BUTTON then newClickedObj:flash() 
-				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX then newClickedObj:write() 
+				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write() 
 				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() 
 				elseif newClickedObj.id == ui.ID.CANVAS then
 					local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
