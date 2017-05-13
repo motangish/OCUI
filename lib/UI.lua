@@ -27,12 +27,12 @@ function ui.initialize()
 end
 
 local function codeToSymbol(code)
-  local symbol
-  if code ~= 0 and code ~= 13 and code ~= 8 and code ~= 9 and code ~= 200 and code ~= 208 and code ~= 203 and code ~= 205 and not kb.isControlDown() then
-    symbol = unicode.char(code) 
-    if kb.isShiftPressed then symbol = unicode.upper(symbol) end
-  end
-  return symbol
+    local symbol
+    if code ~= 0 and code ~= 13 and code ~= 8 and code ~= 9 and code ~= 200 and code ~= 208 and code ~= 203 and code ~= 205 and not kb.isControlDown() then
+        symbol = unicode.char(code)
+        if kb.isShiftPressed then symbol = unicode.upper(symbol) end
+    end
+    return symbol
 end
 
 function ui.checkClick(obj, x, y)
