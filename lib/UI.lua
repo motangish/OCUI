@@ -9,15 +9,16 @@ local gpu = require("component").gpu
 local ui = {
 	eventHandling=false,
 	ID = {
-		BOX = 				1,
-		STANDART_BUTTON = 	2,
-		STANDART_TEXTBOX = 	3,
-		BEAUTIFUL_TEXTBOX = 4,
-		STANDART_CHECKBOX = 5,
-		CONTEXT_MENU = 		6,
-		SCROLLBAR = 		7,
-		IMAGE = 			8,
-		CANVAS = 			9
+		BOX  			  = 1,
+		STANDART_BUTTON   = 2,
+		BEAUTIFUL_BUTTON  = 3,
+		STANDART_TEXTBOX  = 4,
+		BEAUTIFUL_TEXTBOX = 5,
+		STANDART_CHECKBOX = 6,
+		CONTEXT_MENU      = 7,
+		SCROLLBAR         = 8,
+		IMAGE             = 9,
+		CANVAS            = 10
 	}
 }
 
@@ -85,9 +86,9 @@ local function drawStandartButton(obj)
 		tColor = obj.bColor
 	end
 	if obj.args.alpha then
-		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, obj.args.dPixel)
+		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, false)
 	else
-		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil, obj.args.dPixel)
+		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil, false)
 	end
     buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
 end
@@ -103,6 +104,39 @@ end
 function ui.standartButton(x, y, width, height, bColor, tColor, text, args)
 	return checkProperties(x, y, width, height, {
 		bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, flash=flashButton, addObj=addObject
+	})
+end
+
+--  BEAUTIFUL BUTTON  ------------------------------------------------------------------------------------
+local function drawBeautifulButton(obj)
+	local bColor, tColor = obj.bColor, obj.tColor
+	if obj.args.symbol then symbol = obj.args.symbol end
+	if obj.args.active then
+		bColor = obj.tColor
+		tColor = obj.bColor
+	end
+	if obj.args.alpha then
+		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, false)
+	else
+		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", bColor, nil, false)
+	end
+	local up = "┌" .. string.rep("─", obj.width - 2) .. "┐"
+	local down = "└" .. string.rep("─", obj.width - 2) .. "┘"
+	local x2, y = obj.globalX + obj.width - 1, obj.globalY
+	buffer.drawText(obj.globalX, y, nil, tColor, up)
+	y = y + 1
+	for i = 1, obj.height - 2 do
+		buffer.drawText(obj.globalX, y, nil, tColor, "│")
+		buffer.drawText(x2, y, nil, tColor, "│")
+		y = y + 1
+	end
+	buffer.drawText(obj.globalX, y, nil, tColor, down)
+    buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
+end
+
+function ui.beautifulButton(x, y, width, height, bColor, tColor, text, args)
+	return checkProperties(x, y, width, height, {
+		bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, flash=flashButton, addObj=addObject
 	})
 end
 
@@ -391,7 +425,7 @@ function ui.handleEvents(obj, args)
 			end
 			-- Checking scrollbar object
 			if e[1] == "touch" then
-				if newClickedObj.id == ui.ID.STANDART_BUTTON then newClickedObj:flash() 
+				if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON then newClickedObj:flash() 
 				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write() 
 				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() 
 				elseif newClickedObj.id == ui.ID.CANVAS then
