@@ -70,7 +70,7 @@ end
 
 function ui.box(x, y, width, height, aColor, args)
 	return checkProperties(x, y, width, height, {
-		color=aColor, id=ui.ID.BOX, draw=drawBox, addObj=addObject
+		color=aColor, args=args, ssid=ui.ID.BOX, draw=drawBox, addObj=addObject
 	})
 end
 
@@ -100,7 +100,7 @@ end
 
 function ui.standartButton(x, y, width, height, bColor, tColor, text, args)
 	return checkProperties(x, y, width, height, {
-		bColor=bColor, tColor=tColor, text=text, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, flash=flashButton, addObj=addObject
+		bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, flash=flashButton, addObj=addObject
 	})
 end
 
@@ -158,7 +158,7 @@ end
 
 function ui.standartTextbox(x, y, width, bColor, tColor, title, args)
 	return checkProperties(x, y, width, 1, {
-		bColor=bColor, tColor=tColor, text="", title=title, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject
+		bColor=bColor, tColor=tColor, text="", title=title, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject
 	})
 end
 
@@ -185,22 +185,24 @@ end
 
 function ui.standartCheckbox(x, y, bColor, tColor, args)
 	return checkProperties(x, y, 1, 1, {
-		bColor=bColor, tColor=tColor, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject
+		bColor=bColor, tColor=tColor, args=args, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject
 	})
 end
 
 --  SCROLLBAR  -------------------------------------------------------------------------------------------
 local function drawScrollbar(obj)
 	local bColor, tColor = obj.bColor, obj.tColor
-	buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor)
+	buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor, obj.bColor)
 	buffer.setDrawing(obj.globalX, obj.globalY, obj.width, obj.height)
 	ui.drawObject(obj.object, obj.globalX, obj.globalY)
 	buffer.setDefaultDrawing()
 	local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
 	if lineHeight < 1 then lineHeight = 1 end
 	if lineHeight > obj.height then lineHeight = obj.height end
-	buffer.fill(obj.globalX + obj.width - 1, obj.globalY, 1, obj.height, " ", obj.bColor, nil)
-	buffer.fill(obj.globalX + obj.width - 1, obj.globalY + obj.position - 1, 1, lineHeight, " ", obj.tColor, nil)
+	if not obj.args.hideBar then
+		buffer.fill(obj.globalX + obj.width - 1, obj.globalY, 1, obj.height, " ", obj.bColor, nil)
+		buffer.fill(obj.globalX + obj.width - 1, obj.globalY + obj.position - 1, 1, lineHeight, " ", obj.tColor, nil)
+	end
 end
 
 local function scrollbarScroll(obj, position, side)
@@ -231,7 +233,7 @@ end
 
 function ui.scrollbar(x, y, width, height, bColor, tColor, object, args)
 	return checkProperties(x, y, width, height, {
-		bColor=bColor, tColor=tColor, object=object, position=1, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject
+		bColor=bColor, tColor=tColor, object=object, position=1, args=args, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject
 	})
 end
 
@@ -291,9 +293,14 @@ function ui.handleEvents(obj, args)
 		if clickedObj then
 			local newClickedObj = clickedObj
 			if clickedObj.object then
-				local newClickedObj2 = ui.checkClick(clickedObj.object, e[3], e[4])
-				if newClickedObj2 then
-					newClickedObj = newClickedObj2
+				local state = 1
+				if clickedObj.args.hideBar then state = 0 end
+				buffer.setDrawing(clickedObj.globalX, clickedObj.globalY, clickedObj.width - state, clickedObj.height)
+				if e[3] < clickedObj.globalX + clickedObj.width - state then
+					local newClickedObj2 = ui.checkClick(clickedObj.object, e[3], e[4])
+					if newClickedObj2 then
+						newClickedObj = newClickedObj2
+					end
 				end
 			end
 			-- Checking scrollbar object
@@ -329,6 +336,7 @@ function ui.handleEvents(obj, args)
 				if newClickedObj.id == ui.ID.CANVAS then
 					local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
 					newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor)
+					gpu.setBackground(newClickedObj.currBColor)
 					gpu.set(e[3], e[4], " ")
 				end
 				if clickedObj and clickedObj.drag then clickedObj:drag() end
@@ -345,6 +353,7 @@ function ui.handleEvents(obj, args)
 				if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
 				if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
 			end
+			buffer.setDefaultDrawing()
 		end
 	end
 end
