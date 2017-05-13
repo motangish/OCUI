@@ -9,13 +9,14 @@ local gpu = require("component").gpu
 local ui = {
 	eventHandling=false,
 	ID = {
-		BOX = 1,
-		STANDART_BUTTON = 2,
-		STANDART_TEXTBOX = 3,
+		BOX = 				1,
+		STANDART_BUTTON = 	2,
+		STANDART_TEXTBOX = 	3,
 		STANDART_CHECKBOX = 4,
-		SCROLLBAR = 5,
-		IMAGE = 6,
-		CANVAS = 7
+		CONTEXT_MENU = 		5,
+		SCROLLBAR = 		6,
+		IMAGE = 			7,
+		CANVAS = 			8
 	}
 }
 
@@ -186,6 +187,59 @@ end
 function ui.standartCheckbox(x, y, bColor, tColor, args)
 	return checkProperties(x, y, 1, 1, {
 		bColor=bColor, tColor=tColor, args=args, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject
+	})
+end
+
+--  CONTEXT MENU  ----------------------------------------------------------------------------------------
+local function drawContextMenu(obj)
+	if obj.showing then
+		obj.image = image.crop(obj.globalX, obj.globalY, obj.width, obj.height, buffer.new)
+		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor)
+		for i = 1, #obj.objs do
+			buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", obj.bColor)
+			buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, obj.bColor, obj.tColor, obj.objs[i][1])
+		end
+	end
+end
+
+local function doContextMenu(obj)
+	local state = true
+	obj.showing = true
+	drawContextMenu(obj)
+	buffer.draw()
+	while state do
+		local e = {event.pull()}
+		if e[1] == "touch" then
+			for i = 1, #obj.objs do
+				if e[3] >= obj.globalX and e[3] <= obj.globalX + obj.width - 1 and e[4] == obj.globalY + i - 1 then
+					buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", color.invert(obj.bColor))
+					buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, color.invert(obj.tColor), obj.objs[i][1])
+					buffer.draw()
+					os.sleep(0.3)
+					buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", obj.bColor)
+					buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, obj.tColor, obj.objs[i][1])
+					buffer.draw()
+					buffer.drawImage(obj.globalX, obj.globalY, obj.image)
+					obj.showing, state = false, false
+					buffer.draw()
+					if obj.objs[i].func then obj.objs[i].func(obj.objs[i].args)
+					break
+				end
+			end
+		end
+	end
+end
+
+local function addContextMenuObject(obj, text, func, args)
+	local length = unicode.len(text)
+	if length + 2 > obj.width then obj.width = length + 2 end
+	obj.height = obj.height + 1
+	table.insert(obj.objs, {text, func, args})
+end
+
+function ui.contextMenu(x, y, bColor, tColor, args)
+	return checkProperties(x, y, 1, 0, {
+		bColor=bColor, tColor=tColor, args=args, objs={}, id=ui.ID.CONTEXT_MENU, show=doContextMenu, draw=drawContextMenu, addObj=addContextMenuObject
 	})
 end
 
