@@ -190,13 +190,14 @@ function image:fillBlend(x, y, width, height, aColor, alpha, dPixel)
             if dPixel then
                 local index = image.XYToIndex(x + w - 1, floor((y + h - 1) / 2), self.width)
                 local num, subNum = math.modf((y + h - 1) / 2)
+                self.data[index] = "▀"
                 if subNum > 0.0 then
-                    self.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))
+                    self.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))
                 else
                     if not self.data[index + 2] then
                         self.data[index + 2] = self.data[index + 1]
                     end
-                    self.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 2]), aColor, alpha))
+                    self.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))
                 end
             else
                 self.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))

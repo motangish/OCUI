@@ -90,13 +90,14 @@ function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
                 if dPixel then
                     local index = image.XYToIndex(x + w - 1, floor((y + h - 1) / 2), buffer.new.width)
                     local num, subNum = math.modf((y + h - 1) / 2)
+                    buffer.new.data[index] = "▀"
                     if subNum > 0.0 then
-                        buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                        buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
                     else
                         if not buffer.new.data[index + 2] then
                             buffer.new.data[index + 2] = buffer.new.data[index + 1]
                         end
-                        buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+                        buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
                     end
                 else
                     buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))

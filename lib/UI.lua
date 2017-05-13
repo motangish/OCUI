@@ -10,15 +10,16 @@ local ui = {
 	eventHandling=false,
 	ID = {
 		BOX  			  = 1,
-		STANDART_BUTTON   = 2,
-		BEAUTIFUL_BUTTON  = 3,
-		STANDART_TEXTBOX  = 4,
-		BEAUTIFUL_TEXTBOX = 5,
-		STANDART_CHECKBOX = 6,
-		CONTEXT_MENU      = 7,
-		SCROLLBAR         = 8,
-		IMAGE             = 9,
-		CANVAS            = 10
+        WINDOW            = 2,
+		STANDART_BUTTON   = 3,
+		BEAUTIFUL_BUTTON  = 4,
+		STANDART_TEXTBOX  = 5,
+		BEAUTIFUL_TEXTBOX = 6,
+		STANDART_CHECKBOX = 7,
+		CONTEXT_MENU      = 8,
+		SCROLLBAR         = 9,
+		IMAGE             = 10,
+		CANVAS            = 11
 	}
 }
 
@@ -45,6 +46,10 @@ function ui.checkClick(obj, x, y)
 	end
 end
 
+function ui.centerText(text, width)
+    return math.floor(width / 2 - unicode.len(text) / 2)
+end
+
 local function addObject(toObj, obj)
 	obj.globalX, obj.globalY = toObj.globalX + obj.x - 1, toObj.globalY + obj.y - 1
 	table.insert(toObj.objects, obj)
@@ -61,7 +66,7 @@ local function checkProperties(x, y, width, height, props)
 end
 
 --  BOX  -------------------------------------------------------------------------------------------------
-local function drawBox(obj, x, y)
+local function drawBox(obj)
 	local symbol = " "
 	if obj.args.symbol then symbol = obj.args.symbol end
 	if obj.args.alpha then
@@ -73,8 +78,29 @@ end
 
 function ui.box(x, y, width, height, aColor, args)
 	return checkProperties(x, y, width, height, {
-		color=aColor, args=args, ssid=ui.ID.BOX, draw=drawBox, addObj=addObject
+		color=aColor, args=args, id=ui.ID.BOX, draw=drawBox, addObj=addObject
 	})
+end
+
+--  WINDOW  -------------------------------------------------------------------------------------------------
+local function drawWindow(obj)
+    if obj.args.alpha then
+        buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, obj.color, obj.args.alpha, obj.args.dPixel)
+    else
+        buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor, nil, false)
+        buffer.fill(obj.globalX, obj.globalY, obj.width, 1, " ", obj.barColor, nil, false)
+        buffer.drawText(obj.globalX + ui.centerText(obj.title, obj.width), obj.globalY, nil, obj.tColor, obj.title)
+    end
+    if obj.shadow then
+        buffer.fillBlend(obj.globalX + obj.width, obj.globalY * 2, 1, obj.height * 2, 0, 0.5, true)
+        buffer.fillBlend(obj.globalX + 1, (obj.globalY + obj.height) * 2 - 1, obj.width - 1, 1, 0, 0.5, true)
+    end
+end
+
+function ui.window(x, y, width, height, bColor, barColor, tColor, title, shadow, args)
+    return checkProperties(x, y, width, height, {
+        bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject
+    })
 end
 
 --  STANDART BUTTON  -------------------------------------------------------------------------------------
