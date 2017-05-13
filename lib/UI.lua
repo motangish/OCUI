@@ -1,8 +1,10 @@
 local buffer = require("IBUFFER")
+local image = require("IMAGE")
 local color = require("COLOR")
 local event = require("event")
 local unicode = require("unicode")
 local kb = require("keyboard")
+local gpu = require("component").gpu
 
 local ui = {
 	eventHandling=false,
@@ -12,7 +14,8 @@ local ui = {
 		STANDART_TEXTBOX = 3,
 		STANDART_CHECKBOX = 4,
 		SCROLLBAR = 5,
-		IMAGE = 6
+		IMAGE = 6,
+		CANVAS = 7
 	}
 }
 
@@ -243,6 +246,17 @@ function ui.image(x, y, data)
 	})
 end
 
+--  CANVAS  ----------------------------------------------------------------------------------------------
+local function drawCanvas(obj)
+	buffer.drawImage(obj.globalX, obj.globalY, image.replaceNullSymbols(obj.image, "▒"))
+end
+
+function ui.canvas(x, y, data)
+	return checkProperties(x, y, data.width, data.height, {
+		image=data, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject
+	})
+end
+
 --  DRAWING  ---------------------------------------------------------------------------------------------
 function ui.drawObject(obj, x, y)
 	local newX, newY = x, y
@@ -275,24 +289,31 @@ function ui.handleEvents(obj, args)
 		local clickedObj
 		if e[3] and e[4] then clickedObj = ui.checkClick(obj, e[3], e[4]) end
 		if clickedObj then
-			if e[1] == "touch" then
-				local newClickedObj = clickedObj
-				if clickedObj.object then
-					local newClickedObj2 = ui.checkClick(clickedObj.object, e[3], e[4])
-					if newClickedObj2 then
-						newClickedObj = newClickedObj2
-						if newClickedObj2.touch then newClickedObj2:touch() end
-					end
+			local newClickedObj = clickedObj
+			if clickedObj.object then
+				local newClickedObj2 = ui.checkClick(clickedObj.object, e[3], e[4])
+				if newClickedObj2 then
+					newClickedObj = newClickedObj2
 				end
+			end
+			-- Checking scrollbar object
+			if e[1] == "touch" then
 				if newClickedObj.id == ui.ID.STANDART_BUTTON then newClickedObj:flash() 
 				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX then newClickedObj:write() 
-				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() end
+				elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() 
+				elseif newClickedObj.id == ui.ID.CANVAS then
+					local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
+					newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor)
+					gpu.setBackground(newClickedObj.currBColor)
+					gpu.set(e[3], e[4], " ")
+				end
 				if clickedObj.id == ui.ID.SCROLLBAR then
 					if checkScrollbarClick(clickedObj, e[3], e[4]) then
 						clickedObj.scrolling = true
 						clickedObj.scrollingY = e[4] - clickedObj.globalY - clickedObj.position + 2
 					end
 				end
+				if newClickedObj.touch then newClickedObj:touch() end
 				if not clickedObj.object and newClickedObj and newClickedObj.touch then newClickedObj:touch() end
 				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
@@ -305,12 +326,20 @@ function ui.handleEvents(obj, args)
 						clickedObj:scroll(e[4] - clickedObj.globalY - clickedObj.scrollingY + 2)
 					end
 				end
+				if newClickedObj.id == ui.ID.CANVAS then
+					local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
+					newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor)
+					gpu.set(e[3], e[4], " ")
+				end
 				if clickedObj and clickedObj.drag then clickedObj:drag() end
 				if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drop" then
 				if clickedObj.id == ui.ID.SCROLLBAR then
 					clickedObj.scrolling = false
 					clickedObj.scrollingY = nil
+				end
+				if newClickedObj.id == ui.ID.CANVAS then
+					if clickedObj.object then clickedObj:draw() else newClickedObj:draw() end
 				end
 			elseif e[1] == "scroll" then
 				if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end

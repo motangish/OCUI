@@ -26,12 +26,7 @@ function buffer.initialize(width, height)
 end
 
 local function floor(number)
-  local num, subNum = math.modf(number)
-  if subNum >= 0.5 then
-    return num + 1
-  else
-    return num
-  end
+  return math.floor(number + 0.5)
 end
 
 local function checkPixel(x, y)

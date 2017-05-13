@@ -9,12 +9,7 @@ local image = {}
 image.__index = image
 
 local function floor(number)
-  local num, subNum = math.modf(number)
-  if subNum >= 0.5 then
-    return num + 1
-  else
-    return num
-  end
+  return math.floor(number + 0.5)
 end
 
 local function swap(a, b)
@@ -50,16 +45,37 @@ end
 
 function image.crop(x, y, width, height, imageToCrop)
   local cropped = image.new("cropped", width, height)
+  local index, sindex
   for h = 1, height do
     for w = 1, width do
-      local index = image.XYToIndex(w, h, width)
-      local sindex = image.XYToIndex(x + w - 1, y + h - 1, imageToCrop.width)
+      index, sindex = image.XYToIndex(w, h, width), image.XYToIndex(x + w - 1, y + h - 1, imageToCrop.width)
       cropped.data[index] = imageToCrop.data[sindex]
       cropped.data[index + 1] = imageToCrop.data[sindex + 1]
       cropped.data[index + 2] = imageToCrop.data[sindex + 2]
     end
   end
   return cropped
+end
+
+function image.replaceNullSymbols(imageToReplace, symbol)
+  local replaced = image.new("replaced", imageToReplace.width, imageToReplace.height)
+  local index, iP1, iP2
+  for h = 1, imageToReplace.height do
+    for w = 1, imageToReplace.width do
+      index = image.XYToIndex(w, h, imageToReplace.width)
+      iP1, iP2 = index + 1, index + 2
+      if imageToReplace.data[index] == -1 then
+        replaced.data[index] = symbol
+        replaced.data[iP1] = 0xFF
+        replaced.data[iP2] = 0
+      else
+        replaced.data[index] = imageToReplace.data[index]
+        replaced.data[iP1] = imageToReplace.data[iP1]
+        replaced.data[iP2] = imageToReplace.data[iP2]
+      end
+    end
+  end
+  return replaced
 end
 
 function image.compress(imageToCompress)
@@ -352,9 +368,9 @@ end
 function image:draw(x, y)
   if self.compressed then
     for bColor, data1 in pairs(self.data) do
-      if bColor then gpu.setBackground(color.to24Bit(bColor)) end
+      if bColor ~= -1 then gpu.setBackground(color.to24Bit(bColor)) end
       for tColor, data2 in pairs(data1) do
-        gpu.setForeground(color.to24Bit(tColor))
+        if tColor ~= -1 then gpu.setForeground(color.to24Bit(tColor)) end
         for i = 1, #data2, 3 do
           gpu.set(x + data2[i] - 1, y + data2[i + 1] - 1, data2[i + 2])
         end
