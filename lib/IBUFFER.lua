@@ -86,9 +86,8 @@ function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
             local state = false
             if dPixel then state = checkPixel(x + w - 1, floor((y + h - 1) / 2)) else state = checkPixel(x + w - 1, y + h - 1) end
             if state then
-                index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)
                 if dPixel then
-                    local index = image.XYToIndex(x + w - 1, floor((y + h - 1) / 2), buffer.new.width)
+                    index = image.XYToIndex(x + w - 1, floor((y + h - 1) / 2), buffer.new.width)
                     local num, subNum = math.modf((y + h - 1) / 2)
                     buffer.new.data[index] = "▀"
                     if subNum > 0.0 then
@@ -97,9 +96,12 @@ function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
                         if not buffer.new.data[index + 2] then
                             buffer.new.data[index + 2] = buffer.new.data[index + 1]
                         end
-                        buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                        local c = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                        if buffer.new.data[index + 2] ~= c then buffer.new.data[index + 2] = buffer.new.data[index + 1] end
+                        buffer.new.data[index + 1] = c
                     end
                 else
+                    index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)
                     buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
                     buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
                 end
