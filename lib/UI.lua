@@ -17,9 +17,10 @@ local ui = {
 		BEAUTIFUL_TEXTBOX = 6,
 		STANDART_CHECKBOX = 7,
 		CONTEXT_MENU      = 8,
-		SCROLLBAR         = 9,
-		IMAGE             = 10,
-		CANVAS            = 11
+        LISTBOX           = 9,
+		SCROLLBAR         = 10,
+		IMAGE             = 11,
+		CANVAS            = 12
 	}
 }
 
@@ -116,7 +117,11 @@ local function drawStandartButton(obj)
 	else
 		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil, false)
 	end
-    buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
+    if obj.args.indent then
+        buffer.drawText(obj.globalX + obj.args.indent, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
+    else
+        buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
+    end
 end
 
 local function flashButton(obj, delay)
@@ -127,9 +132,9 @@ local function flashButton(obj, delay)
 	ui.draw(obj)
 end
 
-function ui.standartButton(x, y, width, height, bColor, tColor, text, args)
+function ui.standartButton(x, y, width, height, bColor, tColor, text, func, args)
 	return checkProperties(x, y, width, height, {
-		bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, flash=flashButton, addObj=addObject
+		bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, addObj=addObject
 	})
 end
 
@@ -140,23 +145,30 @@ local function drawBeautifulButton(obj)
 	if obj.args.active then
 		bColor = obj.tColor
 		tColor = obj.bColor
+        buffer.fill(obj.globalX, obj.globalY * 2 - 1, obj.width, 1, "", nil, nil, true)
+        if obj.args.alpha then
+            buffer.fillBlend(obj.globalX, obj.globalY * 2, obj.width, obj.height * 2, bColor, obj.args.alpha, true)
+        else
+            buffer.fill(obj.globalX, 6, obj.width, 4, " ", bColor, nil, true)
+        end
+    else
+        if obj.args.alpha then
+            buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, false)
+        else
+            buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", bColor, nil, false)
+        end
+        local up = "┌" .. string.rep("─", obj.width - 2) .. "┐"
+        local down = "└" .. string.rep("─", obj.width - 2) .. "┘"
+        local x2, y = obj.globalX + obj.width - 1, obj.globalY
+        buffer.drawText(obj.globalX, y, nil, tColor, up)
+        y = y + 1
+        for i = 1, obj.height - 2 do
+            buffer.drawText(obj.globalX, y, nil, tColor, "│")
+            buffer.drawText(x2, y, nil, tColor, "│")
+            y = y + 1
+        end
+        buffer.drawText(obj.globalX, y, nil, tColor, down)
 	end
-	if obj.args.alpha then
-		buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, false)
-	else
-		buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", bColor, nil, false)
-	end
-	local up = "┌" .. string.rep("─", obj.width - 2) .. "┐"
-	local down = "└" .. string.rep("─", obj.width - 2) .. "┘"
-	local x2, y = obj.globalX + obj.width - 1, obj.globalY
-	buffer.drawText(obj.globalX, y, nil, tColor, up)
-	y = y + 1
-	for i = 1, obj.height - 2 do
-		buffer.drawText(obj.globalX, y, nil, tColor, "│")
-		buffer.drawText(x2, y, nil, tColor, "│")
-		y = y + 1
-	end
-	buffer.drawText(obj.globalX, y, nil, tColor, down)
     buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
 end
 
@@ -335,6 +347,34 @@ function ui.contextMenu(x, y, bColor, tColor, args)
 	})
 end
 
+--  LISTBOX  -------------------------------------------------------------------------------------------------
+local function drawListBox(obj)
+    if obj.args.alpha then
+        buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, obj.bColor, obj.args.alpha, false)
+    else
+        buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, obj.bColor, nil, false)
+    end
+    if obj.shadow then
+        buffer.fillBlend(obj.globalX + obj.width, obj.globalY * 2, 1, obj.height * 2, 0, 0.5, true)
+        buffer.fillBlend(obj.globalX + 1, (obj.globalY + obj.height) * 2 - 1, obj.width - 1, 1, 0, 0.5, true)
+    end
+    for i = 1, #obj.objects do
+        obj.objects[i].y = i
+    end
+end
+
+local function addListBoxObject(obj, text, func, args)
+    local newArgs = args or {}
+    newArgs.indent = 1
+    table.insert(obj.objects, ui.standartButton(1, 1, obj.width, 1, obj.bColor, obj.tColor, text, func, newArgs))
+end
+
+function ui.listBox(x, y, width, height, bColor, tColor, shadow, args)
+    return checkProperties(x, y, width, height, {
+        bColor=bColor, tColor=tColor, shadow=shadow, args=args, objs={}, id=ui.ID.LISTBOX, draw=drawListBox, addObj=addListBoxObject
+    })
+end
+
 --  SCROLLBAR  -------------------------------------------------------------------------------------------
 local function drawScrollbar(obj)
 	local bColor, tColor = obj.bColor, obj.tColor
@@ -438,18 +478,16 @@ function ui.handleEvents(obj, args)
 		if e[3] and e[4] then clickedObj = ui.checkClick(obj, e[3], e[4]) end
 		if clickedObj then
 			local newClickedObj = clickedObj
+            -- Checking scrollbar object
 			if clickedObj.object then
 				local state = 1
 				if clickedObj.args.hideBar then state = 0 end
 				buffer.setDrawing(clickedObj.globalX, clickedObj.globalY, clickedObj.width - state, clickedObj.height)
 				if e[3] < clickedObj.globalX + clickedObj.width - state then
 					local newClickedObj2 = ui.checkClick(clickedObj.object, e[3], e[4])
-					if newClickedObj2 then
-						newClickedObj = newClickedObj2
-					end
+					if newClickedObj2 then newClickedObj = newClickedObj2 end
 				end
 			end
-			-- Checking scrollbar object
 			if e[1] == "touch" then
 				if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON then newClickedObj:flash() 
 				elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write() 
@@ -457,17 +495,18 @@ function ui.handleEvents(obj, args)
 				elseif newClickedObj.id == ui.ID.CANVAS then
 					local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
 					newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor)
-					gpu.setBackground(newClickedObj.currBColor)
-					gpu.set(e[3], e[4], " ")
+					buffer.new:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
+                    buffer.old:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
+                    gpu.setBackground(newClickedObj.currBColor)
+                    gpu.set(e[3], e[4], " ")
 				end
 				if clickedObj.id == ui.ID.SCROLLBAR then
-					if checkScrollbarClick(clickedObj, e[3], e[4]) then
+					if not clickedObj.args.hideBar and checkScrollbarClick(clickedObj, e[3], e[4]) then
 						clickedObj.scrolling = true
 						clickedObj.scrollingY = e[4] - clickedObj.globalY - clickedObj.position + 2
 					end
 				end
-				if newClickedObj.touch then newClickedObj:touch() end
-				if not clickedObj.object and newClickedObj and newClickedObj.touch then newClickedObj:touch() end
+				if newClickedObj.touch then newClickedObj.touch(newClickedObj.args.touchArgs) end
 				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
 				if clickedObj.id == ui.ID.SCROLLBAR then
@@ -481,20 +520,20 @@ function ui.handleEvents(obj, args)
 				end
 				if newClickedObj.id == ui.ID.CANVAS then
 					local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
-					newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor)
+					newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor, newClickedObj.currBColor)
+                    buffer.new:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
+                    buffer.old:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
 					gpu.setBackground(newClickedObj.currBColor)
 					gpu.set(e[3], e[4], " ")
 				end
-				if clickedObj and clickedObj.drag then clickedObj:drag() end
+				if clickedObj and clickedObj.drag then clickedObj.drag(newClickedObj.args.dragArgs) end
 				if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drop" then
 				if clickedObj.id == ui.ID.SCROLLBAR then
 					clickedObj.scrolling = false
 					clickedObj.scrollingY = nil
 				end
-				if newClickedObj.id == ui.ID.CANVAS then
-					if clickedObj.object then clickedObj:draw() else newClickedObj:draw() end
-				end
+                if newClickedObj == ui.ID.CANVAS then ui.draw(newClickedObj) end
 			elseif e[1] == "scroll" then
 				if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
 				if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
