@@ -212,11 +212,13 @@ local function writeTextbox(obj)
 		if e[1] == "touch" then
 			obj.args.active = false
 			ui.draw(obj)
+            if obj.enter then obj.enter(obj.text) end
 			break
 		elseif e[1] == "key_down" then
 			if e[4] == 0x1C then -- ENTER
 				obj.args.active = false
 				ui.draw(obj)
+                if obj.enter then obj.enter(obj.text) end
 				break
 			elseif e[4] == 0x0E then -- DELETE
 				if obj.text ~= "" then obj.text = unicode.sub(obj.text, 1, -2) end
@@ -225,6 +227,7 @@ local function writeTextbox(obj)
 				local symbol = codeToSymbol(e[3])
 				if symbol then obj.text = obj.text .. symbol end
 				ui.draw(obj)
+                if obj.textChanged then obj.textChanged(obj.text) end
 			end
 		end
 	end
