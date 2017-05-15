@@ -133,7 +133,9 @@ local function flashButton(obj, delay)
 end
 
 function ui.standartButton(x, y, width, height, bColor, tColor, text, func, args)
-	return checkProperties(x, y, width, height, {
+    local newWidth = width
+    if not width then newWidth = unicode.len(text) + 2 end
+	return checkProperties(x, y, newWidth, height, {
 		bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, addObj=addObject
 	})
 end
@@ -475,10 +477,11 @@ end
 function ui.handleEvents(obj, args)
 	args = args or {}
 	ui.eventHandling = true
+    ui.checkingObject = obj
 	while ui.eventHandling do
 		local e = {event.pull()}
 		local clickedObj
-		if e[3] and e[4] then clickedObj = ui.checkClick(obj, e[3], e[4]) end
+		if e[3] and e[4] then clickedObj = ui.checkClick(ui.checkingObject, e[3], e[4]) end
 		if clickedObj then
 			local newClickedObj = clickedObj
             -- Checking scrollbar object
@@ -510,7 +513,7 @@ function ui.handleEvents(obj, args)
 					end
 				end
 				if newClickedObj.touch then newClickedObj.touch(newClickedObj.args.touchArgs) end
-				if args.touch then args.touch(e[3], e[4], e[5], e[6]) end
+				if args.touch then args.touch(newClickedObj, e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drag" then
 				if clickedObj.id == ui.ID.SCROLLBAR then
 					if not checkScrollbarClick(clickedObj, e[3], e[4]) then
@@ -530,7 +533,7 @@ function ui.handleEvents(obj, args)
 					gpu.set(e[3], e[4], " ")
 				end
 				if clickedObj and clickedObj.drag then clickedObj.drag(newClickedObj.args.dragArgs) end
-				if args.drag then args.drag(e[3], e[4], e[5], e[6]) end
+				if args.drag then args.drag(newClickedObj, e[3], e[4], e[5], e[6]) end
 			elseif e[1] == "drop" then
 				if clickedObj.id == ui.ID.SCROLLBAR then
 					clickedObj.scrolling = false
@@ -539,7 +542,7 @@ function ui.handleEvents(obj, args)
                 if newClickedObj == ui.ID.CANVAS then ui.draw(newClickedObj) end
 			elseif e[1] == "scroll" then
 				if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
-				if args.scroll then args.scroll(e[3], e[4], e[5], e[6]) end
+				if args.scroll then args.scroll(newClickedObj, e[3], e[4], e[5], e[6]) end
 			end
 			buffer.setDefaultDrawing()
 		end
