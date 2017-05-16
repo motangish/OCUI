@@ -4,6 +4,7 @@ local color = require("COLOR")
 local event = require("event")
 local unicode = require("unicode")
 local kb = require("keyboard")
+local term = require("term")
 local gpu = require("component").gpu
 
 local ui = {
@@ -26,6 +27,18 @@ local ui = {
 
 function ui.initialize()
 	buffer.initialize()
+end
+
+function ui.exit(bColor, tColor)
+    local newBColor, newTColor = bColor, tColor
+    local width, height = gpu.getResolution()
+    if not bColor then newBColor = 0x1C1C1C end
+    if not tColor then newTColor = 0xFFFFFF end
+    gpu.setBackground(newBColor)
+    gpu.setForeground(newTColor)
+    gpu.fill(1, 1, width, height, " ")
+    term.clear()
+    os.exit()
 end
 
 local function codeToSymbol(code)
@@ -125,11 +138,16 @@ local function drawStandartButton(obj)
 end
 
 local function flashButton(obj, delay)
-	obj.args.active = true
-	ui.draw(obj)
-	os.sleep(delay or 0.3)
-	obj.args.active = false
-	ui.draw(obj)
+    if obj.args.toggling then
+        if obj.args.active then obj.args.active = false else obj.args.active = true end
+        ui.draw(obj)
+    else
+	   obj.args.active = true
+	   ui.draw(obj)
+	   os.sleep(delay or 0.3)
+	   obj.args.active = false
+	   ui.draw(obj)
+    end
 end
 
 function ui.standartButton(x, y, width, height, bColor, tColor, text, func, args)
@@ -444,9 +462,9 @@ local function drawCanvas(obj)
 	buffer.drawImage(obj.globalX, obj.globalY, image.replaceNullSymbols(obj.image, "▒"))
 end
 
-function ui.canvas(x, y, data)
+function ui.canvas(x, y, currBColor, data)
 	return checkProperties(x, y, data.width, data.height, {
-		image=data, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject
+		image=data, currBColor=currBColor, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject
 	})
 end
 
