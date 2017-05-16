@@ -362,7 +362,7 @@ local function doContextMenu(obj)
             buffer.drawImage(obj.globalX, obj.globalY, obj.image)
             buffer.draw()
             if obj.args.closing then obj.args.closing() end
-            if clcikedObj and clickedObj.func then clickedObj.func(clickedObj.args) end
+            if clickedObj and clickedObj[2] then clickedObj[2](clickedObj[3]) end
         end
     end
 end
@@ -472,9 +472,9 @@ local function drawCanvas(obj)
     buffer.drawImage(obj.globalX, obj.globalY, image.replaceNullSymbols(obj.image, "▒"))
 end
 
-function ui.canvas(x, y, currBColor, data)
+function ui.canvas(x, y, currBColor, currTColor, currSymbol, data)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, currBColor=currBColor, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject
+        image=data, currBColor=currBColor, currTColor=currTColor, currSymbol=currSymbol, drawing=true, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject
     })
 end
 
@@ -526,13 +526,20 @@ function ui.handleEvents(obj, args)
                 if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON then newClickedObj:flash() 
                 elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write() 
                 elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() 
-                elseif newClickedObj.id == ui.ID.CANVAS then
+                elseif newClickedObj.id == ui.ID.CANVAS and newClickedObj.drawing then
                     local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
-                    newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor)
-                    buffer.new:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
-                    buffer.old:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
-                    gpu.setBackground(newClickedObj.currBColor)
-                    gpu.set(e[3], e[4], " ")
+                    newClickedObj.image:setPixel(x, y, newClickedObj.currSymbol, newClickedObj.currBColor)
+                    buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
+                    buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
+                    if newClickedObj.currSymbol == -1 then
+                        gpu.setBackground(0xFFFFFF)
+                        gpu.setForeground(0)
+                        gpu.set(e[3], e[4], "▒")
+                    else
+                        gpu.setBackground(newClickedObj.currBColor)
+                        gpu.setForeground(newClickedObj.currTColor)
+                        gpu.set(e[3], e[4], newClickedObj.currSymbol)
+                    end
                 end
                 if clickedObj.id == ui.ID.SCROLLBAR then
                     if not clickedObj.args.hideBar and checkScrollbarClick(clickedObj, e[3], e[4]) then
@@ -552,13 +559,20 @@ function ui.handleEvents(obj, args)
                         clickedObj:scroll(e[4] - clickedObj.globalY - clickedObj.scrollingY + 2)
                     end
                 end
-                if newClickedObj.id == ui.ID.CANVAS then
+                if newClickedObj.id == ui.ID.CANVAS and newClickedObj.drawing then
                     local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
-                    newClickedObj.image:setPixel(x, y, " ", newClickedObj.currBColor, newClickedObj.currBColor)
-                    buffer.new:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
-                    buffer.old:setPixel(e[3], e[4], " ", newClickedObj.currBColor)
-                    gpu.setBackground(newClickedObj.currBColor)
-                    gpu.set(e[3], e[4], " ")
+                    newClickedObj.image:setPixel(x, y, newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currBColor)
+                    buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
+                    buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
+                    if newClickedObj.currSymbol == -1 then
+                        gpu.setBackground(0xFFFFFF)
+                        gpu.setForeground(0)
+                        gpu.set(e[3], e[4], "▒")
+                    else
+                        gpu.setBackground(newClickedObj.currBColor)
+                        gpu.setForeground(newClickedObj.currTColor)
+                        gpu.set(e[3], e[4], newClickedObj.currSymbol)
+                    end
                 end
                 if clickedObj and clickedObj.drag then clickedObj.drag(newClickedObj.args.dragArgs) end
                 if args.drag then args.drag(newClickedObj, e[3], e[4], e[5], e[6]) end
@@ -568,6 +582,7 @@ function ui.handleEvents(obj, args)
                     clickedObj.scrollingY = nil
                 end
                 if newClickedObj == ui.ID.CANVAS then ui.draw(newClickedObj) end
+                if args.drop then args.drop(newClickedObj, e[3], e[4], e[5], e[6]) end
             elseif e[1] == "scroll" then
                 if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
                 if args.scroll then args.scroll(newClickedObj, e[3], e[4], e[5], e[6]) end

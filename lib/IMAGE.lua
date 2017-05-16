@@ -64,15 +64,15 @@ function image.replaceNullSymbols(imageToReplace, symbol)
         for w = 1, imageToReplace.width do
             index = image.XYToIndex(w, h, imageToReplace.width)
             iP1, iP2 = index + 1, index + 2
-        if imageToReplace.data[index] == -1 then
-            replaced.data[index] = symbol
-            replaced.data[iP1] = 0xFF
-            replaced.data[iP2] = 0
-        else
-            replaced.data[index] = imageToReplace.data[index]
-            replaced.data[iP1] = imageToReplace.data[iP1]
-            replaced.data[iP2] = imageToReplace.data[iP2]
-        end
+            if imageToReplace.data[index] == -1 then
+                replaced.data[index] = symbol
+                replaced.data[iP1] = 0xFF
+                replaced.data[iP2] = 0
+            else
+                replaced.data[index] = imageToReplace.data[index]
+                replaced.data[iP1] = imageToReplace.data[iP1]
+                replaced.data[iP2] = imageToReplace.data[iP2]
+            end
         end
     end
     return replaced
