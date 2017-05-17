@@ -2,7 +2,7 @@ local bit32 = require("bit32")
 
 local color = {}
 
-local palette = {
+color.palette = {
     0x000000, 0x000040, 0x000080, 0x0000BF, 0x0000FF, 0x002400, 0x002440, 0x002480, 0x0024BF, 0x0024FF, 0x004900, 0x004940, 0x004980, 0x0049BF, 0x0049FF, 0x006D00,
     0x006D40, 0x006D80, 0x006DBF, 0x006DFF, 0x009200, 0x009240, 0x009280, 0x0092BF, 0x0092FF, 0x00B600, 0x00B640, 0x00B680, 0x00B6BF, 0x00B6FF, 0x00DB00, 0x00DB40,
     0x00DB80, 0x00DBBF, 0x00DBFF, 0x00FF00, 0x00FF40, 0x00FF80, 0x00FFBF, 0x00FFFF, 0x0F0F0F, 0x1E1E1E, 0x2D2D2D, 0x330000, 0x330040, 0x330080, 0x3300BF, 0x3300FF,
@@ -54,11 +54,11 @@ function color.to8Bit(color24Bit)
     local closestDelta = math.huge
     local red, green, blue = color.HEXToRGB(color24Bit)
     local closestIndex, delta, paletteRed, paletteGreen, paletteBlue, redVar, greenVar, blueVar
-    for i = 1, #palette do
-        if color == palette[i] then
+    for i = 1, #color.palette do
+        if color == color.palette[i] then
             return i - 1
         else
-            paletteRed, paletteGreen, paletteBlue = color.HEXToRGB(palette[i])
+            paletteRed, paletteGreen, paletteBlue = color.HEXToRGB(color.palette[i])
             redVar = paletteRed - red
             greenVar = paletteGreen - green
             blueVar = paletteBlue - blue
@@ -72,7 +72,7 @@ function color.to8Bit(color24Bit)
 end
 
 function color.to24Bit(color8Bit)
-    return palette[color8Bit + 1]
+    return color.palette[color8Bit + 1]
 end
 
 return color

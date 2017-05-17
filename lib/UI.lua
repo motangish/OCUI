@@ -60,6 +60,11 @@ function ui.checkClick(obj, x, y)
     end
 end
 
+function ui.centerSquare(width, height)
+    local sWidth, sHeight = gpu.getResolution()
+    return sWidth / 2 - width / 2, sHeight / 2 - height / 2
+end
+
 function ui.centerText(text, width)
     return math.floor(width / 2 - unicode.len(text) / 2)
 end
@@ -112,7 +117,9 @@ local function drawWindow(obj)
 end
 
 function ui.window(x, y, width, height, bColor, barColor, tColor, title, shadow, args)
-    return checkProperties(x, y, width, height, {
+    local newX, newY = x, y
+    if not x or not y then newX, newY = ui.centerSquare(width, height) end
+    return checkProperties(newX, newY, width, height, {
         bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject
     })
 end
@@ -165,11 +172,11 @@ local function drawBeautifulButton(obj)
     if obj.args.active then
         bColor = obj.tColor
         tColor = obj.bColor
-        buffer.fill(obj.globalX, obj.globalY * 2 - 1, obj.width, 1, "", nil, nil, true)
+        buffer.fill(obj.globalX, obj.globalY * 2 - 1, obj.width, 1, " ", obj.bColor, nil, true)
         if obj.args.alpha then
             buffer.fillBlend(obj.globalX, obj.globalY * 2, obj.width, obj.height * 2, bColor, obj.args.alpha, true)
         else
-            buffer.fill(obj.globalX, 6, obj.width, 4, " ", bColor, nil, true)
+            buffer.fill(obj.globalX, obj.globalY * 2, obj.width, 4, " ", bColor, nil, true)
         end
     else
         if obj.args.alpha then
@@ -189,12 +196,12 @@ local function drawBeautifulButton(obj)
         end
         buffer.drawText(obj.globalX, y, nil, tColor, down)
     end
-    buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
+    buffer.drawText(math.floor(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2), math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
 end
 
-function ui.beautifulButton(x, y, width, height, bColor, tColor, text, args)
+function ui.beautifulButton(x, y, width, height, bColor, tColor, text, func, args)
     return checkProperties(x, y, width, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, flash=flashButton, addObj=addObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, flash=flashButton, addObj=addObject
     })
 end
 
