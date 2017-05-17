@@ -375,7 +375,9 @@ local function addContextMenuObject(obj, text, func, args)
 end
 
 function ui.contextMenu(x, y, bColor, tColor, shadow, args)
-    return checkProperties(x, y, 1, 0, {
+    local newWidth = 1
+    if args.width then newWidth = args.width end
+    return checkProperties(x, y, newWidth, 0, {
         bColor=bColor, tColor=tColor, shadow=shadow, args=args, objs={}, id=ui.ID.CONTEXT_MENU, show=doContextMenu, draw=drawContextMenu, addObj=addContextMenuObject
     })
 end
