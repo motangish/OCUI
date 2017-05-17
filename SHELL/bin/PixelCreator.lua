@@ -57,20 +57,12 @@ local function toggleEditButton()
     editButton:flash()
 end
 
-local function setLineDraw()
-    tool = "line"
+local function setDrawing(type)
+    tool = type
     disableTools()
     canvas.drawing = false
     ui.draw(mainBox)
 end
-
-local function setEllipseDraw()
-    tool = "ellipse"
-    disableTools()
-    canvas.drawing = false
-    ui.draw(mainBox)
-end
-
 
 local function touch(obj, x, y)
     if obj.id == ui.ID.CANVAS then
@@ -89,6 +81,24 @@ local function drag(obj, x, y)
                 buffer.drawLine(firstX, firstY, secondX, secondY, " ", canvas.currBColor, canvas.currTColor)
             elseif tool == "ellipse" then
                 buffer.drawEllipse(firstX, firstY, secondX, secondY, canvas.currBColor)
+            elseif tool == "emptySq" or tool == "fillSq" then
+                local newX, newY, newW, newH = firstX, firstY, secondX - firstX + 1, secondY - firstY + 1
+                if secondX < firstX then
+                    newX = secondX
+                    newW = firstX - secondX
+                end
+                if secondY < firstY then
+                    newY = secondY
+                    newH = firstY - secondY
+                end
+                if tool == "fillSq" then
+                    buffer.fill(newX, newY, newW, newH, " ", canvas.currBColor, canvas.currTColor)
+                else
+                    buffer.fill(newX, newY, newW, 1, " ", canvas.currBColor, canvas.currTColor)                     -- TOP
+                    buffer.fill(newX, newY + 1, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)             -- LEFT
+                    buffer.fill(newX + newW - 2, newY + 1, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)  -- RIGHT
+                    buffer.fill(newX, newY + newH - 1, newW, 1, " ", canvas.currBColor, canvas.currTColor)          -- BOTTOM
+                end
             end
             buffer.draw()
         end
@@ -106,11 +116,28 @@ local function drop(obj, x, y)
                 elseif e[1] == "key_down" and e[4] == 0x1C then
                     if tool == "line" then
                         canvas.image:drawLine(firstX, firstY - canvas.globalY + 1, secondX, secondY - canvas.globalY + 1, " ", canvas.currBColor, canvas.currTColor)
-                        break
                     elseif tool == "ellipse" then
                         canvas.image:drawEllipse(firstX, firstY - canvas.globalY + 1, secondX, secondY - canvas.globalY + 1, canvas.currBColor)
-                        break
+                    elseif tool == "emptySq" or tool == "fillSq" then
+                        local newX, newY, newW, newH = firstX, firstY, secondX - firstX + 1, secondY - firstY + 1
+                        if secondX < firstX then
+                            newX = secondX
+                            newW = firstX - secondX
+                        end
+                        if secondY < firstY then
+                            newY = secondY
+                            newH = firstY - secondY
+                        end
+                        if tool == "fillSq" then
+                            canvas.image:fill(newX, newY - canvas.globalY + 1, newW, newH, " ", canvas.currBColor, canvas.currTColor)
+                        else
+                            canvas.image:fill(newX, newY - canvas.globalY + 1, newW, 1, " ", canvas.currBColor, canvas.currTColor)                  -- TOP
+                            canvas.image:fill(newX, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)              -- LEFT
+                            canvas.image:fill(newX + newW - 2, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)   -- RIGHT
+                            canvas.image:fill(newX, newY + newH - canvas.globalY, newW, 1, " ", canvas.currBColor, canvas.currTColor)               -- BOTTOM
+                        end
                     end
+                    break
                 end
             end
         end
@@ -142,8 +169,10 @@ local function init()
     fileCM:addObj("Сохранить")
     bar:addObj(fileCM)
     editCM = ui.contextMenu(fileButton.x + fileButton.width + 1, 2, 0xDCDCDC, 0, true, {width=16, closing=toggleEditButton, alpha=0.1})
-    editCM:addObj("Линия", setLineDraw)
-    editCM:addObj("Эллипс", setEllipseDraw)
+    editCM:addObj("Линия", setDrawing, "line")
+    editCM:addObj("Эллипс", setDrawing, "ellipse")
+    editCM:addObj("Пустой прямоугольник", setDrawing, "emptySq")
+    editCM:addObj("Прямоугольник", setDrawing, "fillSq")
     bar:addObj(editCM)
     mainBox:addObj(bar)
     -- CANVAS SCROLLBAR
