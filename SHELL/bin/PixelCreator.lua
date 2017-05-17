@@ -46,7 +46,34 @@ local function eraserFunc()
 end
 
 local function colorFunc()
-
+    local colorWindow = ui.window(nil, nil, 64, 36, 0xDCDCDC, 0xCDCDCD, 0, "Выберите цвет", true)
+    local palette = image.new("palette", 64, 32)
+    local wP, hP
+    local selectedColor = canvas.currBColor
+    local index = 1
+    for h = 1, 16 do
+        for w = 1, 16 do
+            wP, hP = w * 4 - 3, h * 2 - 1
+            palette:fill(wP, hP, 4, 2, " ", color.palette[index])
+            index = index + 1
+        end
+    end
+    local function exitWindow()
+        ui.draw(mainBox)
+        ui.checkingObject = mainBox
+    end
+    local function done()
+        exitWindow()
+        canvas.currBColor = selectedColor
+    end
+    local paletteImgEl = ui.image(1, 2, palette)
+    local cExit = ui.beautifulButton(2, 34, 15, 3, 0xDCDCDC, 0x660000, "Назад", exitWindow)
+    local cDone = ui.beautifulButton(48, 34, 16, 3, 0xDCDCDC, 0x006600, "Готово", done)
+    colorWindow:addObj(paletteImgEl)
+    colorWindow:addObj(cExit)
+    colorWindow:addObj(cDone)
+    ui.draw(colorWindow)
+    ui.checkingObject = colorWindow
 end
 
 local function toggleFileButton()
