@@ -129,14 +129,16 @@ function image.new(name, width, height)
 end
 
 function image:setPixel(x, y, symbol, bColor, tColor, bit8)
-    local index = image.XYToIndex(x, y, self.width)
-    if symbol then self.data[index] = symbol end
-    if bit8 then
-        if bColor then self.data[index + 1] = bColor end
-        if tColor then self.data[index + 2] = tColor end
-    else
-        if bColor then self.data[index + 1] = color.to8Bit(bColor) end
-        if tColor then self.data[index + 2] = color.to8Bit(tColor) end
+    if x > 0 and x <= self.width and y > 0 and y <= self.height then
+        local index = image.XYToIndex(x, y, self.width)
+        if symbol then self.data[index] = symbol end
+        if bit8 then
+            if bColor then self.data[index + 1] = bColor end
+            if tColor then self.data[index + 2] = tColor end
+        else
+            if bColor then self.data[index + 1] = color.to8Bit(bColor) end
+            if tColor then self.data[index + 2] = color.to8Bit(tColor) end
+        end
     end
 end
 
@@ -283,14 +285,16 @@ function image:drawCircle(xC, yC, radius, aColor, dPixel, bit8)
     if x == y then setPixels(x, y) end
 end
 
-function image:drawEllipse(x, y, nWidth, nHeight, aColor, dPixel, bit8)
-    local width, height
-    if x > nWidth then
-        x, width = swap(x, nWidth)
-    else width = nWidth end
-    if y > nHeight then
-        y, height = swap(y, nHeight)
-    else height = nHeight end
+function image:drawEllipse(nX, nY, nX2, nY2, aColor, dPixel, bit8)
+    local x, y, width, height = nX, nY, nX2 - nX, nY2 - nY
+    if nX2 < nX then
+        x = nX2
+        width = nX - nX2
+    end
+    if nY2 < nY then
+        y = nY2
+        height = nY - nY2
+    end
     local color8Bit = aColor
     if not bit8 then color8Bit = color.to8Bit(aColor) end
     local function setPixels(centerX, centerY, deltaX, deltaY, color)
