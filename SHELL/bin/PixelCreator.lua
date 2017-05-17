@@ -33,6 +33,7 @@ local function brushFunc()
     disableTools()
     brushButton.args.active = true
     ui.draw(bar)
+    tool = "brush"
     canvas.currSymbol = " "
 end
 
@@ -40,6 +41,7 @@ local function eraserFunc()
     disableTools()
     eraserButton.args.active = true
     ui.draw(bar)
+    tool = "eraser"
     canvas.currSymbol = -1
 end
 
@@ -57,12 +59,22 @@ end
 
 local function setLineDraw()
     tool = "line"
+    disableTools()
     canvas.drawing = false
+    ui.draw(mainBox)
 end
+
+local function setEllipseDraw()
+    tool = "ellipse"
+    disableTools()
+    canvas.drawing = false
+    ui.draw(mainBox)
+end
+
 
 local function touch(obj, x, y)
     if obj.id == ui.ID.CANVAS then
-        if tool == "line" then
+        if tool ~= "brush" and tool ~= "eraser" then
             firstX, firstY = x, y
         end
     end
@@ -70,10 +82,14 @@ end
 
 local function drag(obj, x, y)
     if obj.id == ui.ID.CANVAS then
-        if tool == "line" then
+        if tool ~= "brush" and tool ~= "eraser" then
             secondX, secondY = x, y
             canvas:draw()
-            buffer.new:drawLine(firstX, firstY, secondX, secondY, " ", canvas.currBColor, canvas.currTColor)
+            if tool == "line" then
+                buffer.drawLine(firstX, firstY, secondX, secondY, " ", canvas.currBColor, canvas.currTColor)
+            elseif tool == "ellipse" then
+                buffer.drawEllipse(firstX, firstY, secondX, secondY, canvas.currBColor)
+            end
             buffer.draw()
         end
     end
@@ -84,9 +100,15 @@ local function drop(obj, x, y)
         if tool ~= "brush" and tool ~= "eraser" then
             while true do
                 local e = {event.pull()}
-                if e[1] == "key_down" and e[4] == 0x1C then
+                if e[1] == "touch" then
+                    touch(canvas, e[3], e[4])
+                    break
+                elseif e[1] == "key_down" and e[4] == 0x1C then
                     if tool == "line" then
-                        canvas.image:drawLine(firstX, firstY + canvas.y - 2, secondX, secondY + canvas.y - 2, " ", canvas.currBColor, canvas.currTColor)
+                        canvas.image:drawLine(firstX, firstY - canvas.globalY + 1, secondX, secondY - canvas.globalY + 1, " ", canvas.currBColor, canvas.currTColor)
+                        break
+                    elseif tool == "ellipse" then
+                        canvas.image:drawEllipse(firstX, firstY - canvas.globalY + 1, secondX, secondY - canvas.globalY + 1, canvas.currBColor)
                         break
                     end
                 end
@@ -119,8 +141,9 @@ local function init()
     fileCM:addObj("Открыть")
     fileCM:addObj("Сохранить")
     bar:addObj(fileCM)
-    editCM = ui.contextMenu(fileButton.x + fileButton.width + 1, 2, 0xDCDCDC, 0, true, {closing=toggleEditButton, alpha=0.1})
+    editCM = ui.contextMenu(fileButton.x + fileButton.width + 1, 2, 0xDCDCDC, 0, true, {width=16, closing=toggleEditButton, alpha=0.1})
     editCM:addObj("Линия", setLineDraw)
+    editCM:addObj("Эллипс", setEllipseDraw)
     bar:addObj(editCM)
     mainBox:addObj(bar)
     -- CANVAS SCROLLBAR
