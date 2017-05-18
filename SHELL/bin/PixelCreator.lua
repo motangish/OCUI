@@ -8,7 +8,7 @@ local gpu = require("component").gpu
 -- MAIN PROGRAM
 local width, height, mainImage
 local firstX, firstY, secondX, secondY
-local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, colorButton, fileCM, exitCM
+local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, colorButton, fileCM, exitCM
 local tool = "brush"
 
 local touch
@@ -16,6 +16,7 @@ local touch
 local function disableTools()
     brushButton.args.active = false
     eraserButton.args.active = false
+    fillButton.args.active = false
     canvas.drawing = true
 end
 
@@ -45,6 +46,15 @@ local function eraserFunc()
     ui.draw(bar)
     tool = "eraser"
     canvas.currSymbol = -1
+end
+
+local function fillFunc()
+    disableTools()
+    fillButton.args.active = true
+    ui.draw(bar)
+    tool = "fill"
+    canvas.currSymbol = " "
+    canvas.drawing = false
 end
 
 local function colorFunc()
@@ -117,9 +127,29 @@ local function setDrawing(type)
     ui.draw(mainBox)
 end
 
+local sColor, dColor
+local function fillCheck(x, y)
+    if x > 0 and x <= canvas.image.width and y > 0 and y <= canvas.image.height then
+        local index = image.XYToIndex(x, y, canvas.image.width)
+        if (canvas.image.data[index + 1] == sColor and canvas.image.data[index + 1] ~= dColor) or (canvas.image.data[index] == -1) then
+            canvas.image.data[index] = " "
+            canvas.image.data[index + 1] = dColor
+            fillCheck(x + 1, y)
+            fillCheck(x - 1, y)
+            fillCheck(x, y + 1)
+            fillCheck(x, y - 1)
+        end
+    end
+end
+
 touch = function(obj, x, y)
     if obj.id == ui.ID.CANVAS then
-        if tool ~= "brush" and tool ~= "eraser" then
+        if tool == "fill" then
+            sColor = canvas.image.data[image.XYToIndex(x, y - canvas.globalY + 1, canvas.image.width) + 1]
+            dColor = color.to8Bit(canvas.currBColor)
+            fillCheck(x, y - canvas.globalY + 1)
+            ui.draw(mainBox)
+        elseif tool ~= "brush" and tool ~= "eraser" then
             firstX, firstY = x, y
         end
     end
@@ -212,7 +242,9 @@ local function init()
     bar:addObj(brushButton)
     eraserButton = ui.standartButton(brushButton.x + brushButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Драялка", eraserFunc, {toggling=true})
     bar:addObj(eraserButton)
-    colorButton = ui.standartButton(eraserButton.x + eraserButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Цвет", colorFunc)
+    fillButton = ui.standartButton(eraserButton.x + eraserButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Заливка", fillFunc, {toggling=true})
+    bar:addObj(fillButton)
+    colorButton = ui.standartButton(fillButton.x + fillButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Цвет", colorFunc)
     bar:addObj(colorButton)
     exitButton = ui.standartButton(width - 8, 1, nil, 1, 0x660000, 0xFFFFFF, "Выйти", exitFunc)
     bar:addObj(exitButton)
