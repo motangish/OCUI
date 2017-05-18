@@ -147,14 +147,26 @@ function image:setDPixel(x, y, aColor, bit8)
     local num, subNum = math.modf(y / 2)
     local color8Bit = aColor
     if not bit8 then color8Bit = color.to8Bit(aColor) end
-    self.data[index] = "▀"
     if subNum > 0.0 then
-        self.data[index + 2] = color8Bit
-    else
-        if not self.data[index + 2] then
-            self.data[index + 2] = self.data[index + 1]
+        local oldS = self.data[index]
+        if self.data[index] == "▀" then
+            self.data[index + 2] = color8Bit
+        elseif self.data[index] == "▄" then
+            self.data[index + 1] = color8Bit
+        else
+            self.data[index] = "▀"
+            self.data[index + 2] = color8Bit
         end
-        self.data[index + 1] = color8Bit
+    else
+        local oldS = self.data[index]
+        if self.data[index] == "▀" then
+            self.data[index + 1] = color8Bit
+        elseif self.data[index] == "▄" then
+            self.data[index + 2] = color8Bit
+        else
+            self.data[index] = "▄"
+            self.data[index + 2] = color8Bit
+        end
     end
 end
 

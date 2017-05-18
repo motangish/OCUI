@@ -89,16 +89,26 @@ function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
                 if dPixel then
                     index = image.XYToIndex(x + w - 1, floor((y + h - 1) / 2), buffer.new.width)
                     local num, subNum = math.modf((y + h - 1) / 2)
-                    buffer.new.data[index] = "▀"
                     if subNum > 0.0 then
-                        buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
-                    else
-                        if not buffer.new.data[index + 2] then
-                            buffer.new.data[index + 2] = buffer.new.data[index + 1]
+                        local oldS = buffer.new.data[index]
+                        if buffer.new.data[index] == "▀" then
+                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+                        elseif buffer.new.data[index] == "▄" then
+                            buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                        else
+                            buffer.new.data[index] = "▀"
+                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
                         end
-                        local c = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
-                        if buffer.new.data[index + 2] ~= c then buffer.new.data[index + 2] = buffer.new.data[index + 1] end
-                        buffer.new.data[index + 1] = c
+                    else
+                        local oldS = buffer.new.data[index]
+                        if buffer.new.data[index] == "▀" then
+                            buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                        elseif buffer.new.data[index] == "▄" then
+                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+                        else
+                            buffer.new.data[index] = "▄"
+                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                        end
                     end
                 else
                     index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)

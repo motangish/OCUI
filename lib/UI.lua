@@ -172,7 +172,6 @@ local function drawBeautifulButton(obj)
     if obj.args.active then
         bColor = obj.tColor
         tColor = obj.bColor
-        buffer.fill(obj.globalX, obj.globalY * 2 - 1, obj.width, 1, " ", obj.bColor, nil, true)
         if obj.args.alpha then
             buffer.fillBlend(obj.globalX, obj.globalY * 2, obj.width, obj.height * 2, bColor, obj.args.alpha, true)
         else
@@ -515,6 +514,7 @@ function ui.handleEvents(obj, args)
     args = args or {}
     ui.eventHandling = true
     ui.checkingObject = obj
+    ui.args = args
     while ui.eventHandling do
         local e = {event.pull()}
         local clickedObj
@@ -557,7 +557,7 @@ function ui.handleEvents(obj, args)
                     end
                 end
                 if newClickedObj.touch then newClickedObj.touch(newClickedObj.args.touchArgs) end
-                if args.touch then args.touch(newClickedObj, e[3], e[4], e[5], e[6]) end
+                if ui.args.touch then ui.args.touch(newClickedObj, e[3], e[4], e[5], e[6]) end
             elseif e[1] == "drag" then
                 if clickedObj.id == ui.ID.SCROLLBAR then
                     if not checkScrollbarClick(clickedObj, e[3], e[4]) then
@@ -584,7 +584,7 @@ function ui.handleEvents(obj, args)
                     end
                 end
                 if clickedObj and clickedObj.drag then clickedObj.drag(newClickedObj.args.dragArgs) end
-                if args.drag then args.drag(newClickedObj, e[3], e[4], e[5], e[6]) end
+                if ui.args.drag then ui.args.drag(newClickedObj, e[3], e[4], e[5], e[6]) end
             elseif e[1] == "drop" then
                 if clickedObj.id == ui.ID.SCROLLBAR then
                     clickedObj.scrolling = false
@@ -594,7 +594,7 @@ function ui.handleEvents(obj, args)
                 if args.drop then args.drop(newClickedObj, e[3], e[4], e[5], e[6]) end
             elseif e[1] == "scroll" then
                 if clickedObj and clickedObj.scroll then clickedObj:scroll(-1, e[5]) end
-                if args.scroll then args.scroll(newClickedObj, e[3], e[4], e[5], e[6]) end
+                if ui.args.scroll then ui.args.scroll(newClickedObj, e[3], e[4], e[5], e[6]) end
             end
             buffer.setDefaultDrawing()
         end
