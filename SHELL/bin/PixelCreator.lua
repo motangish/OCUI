@@ -11,6 +11,8 @@ local firstX, firstY, secondX, secondY
 local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, colorButton, fileCM, exitCM
 local tool = "brush"
 
+local touch
+
 local function disableTools()
     brushButton.args.active = false
     eraserButton.args.active = false
@@ -48,8 +50,9 @@ end
 local function colorFunc()
     local colorWindow = ui.window(nil, nil, 64, 36, 0xDCDCDC, 0xCDCDCD, 0, "Выберите цвет", true)
     local palette = image.new("palette", 64, 32)
-    local wP, hP
     local selectedColor = canvas.currBColor
+    local paletteImgEl, cExit, cDone, cTextbox
+    local wP, hP
     local index = 1
     for h = 1, 16 do
         for w = 1, 16 do
@@ -61,19 +64,42 @@ local function colorFunc()
     local function exitWindow()
         ui.draw(mainBox)
         ui.checkingObject = mainBox
+        ui.args.touch = touch
     end
     local function done()
         exitWindow()
         canvas.currBColor = selectedColor
     end
-    local paletteImgEl = ui.image(1, 2, palette)
-    local cExit = ui.beautifulButton(2, 34, 15, 3, 0xDCDCDC, 0x660000, "Назад", exitWindow)
-    local cDone = ui.beautifulButton(48, 34, 16, 3, 0xDCDCDC, 0x006600, "Готово", done)
+    local function colorTouch(obj, x, y)
+        local cObj = ui.checkClick(paletteImgEl, x, y)
+        if cObj then
+            local symbol, tColor, bColor = gpu.get(x, y)
+            selectedColor = bColor
+            cTextbox.bColor = selectedColor
+            cTextbox.tColor = color.invert(selectedColor)
+            ui.draw(cTextbox)
+        end
+    end
+    local function colorEnter(newColor)
+        if tonumber(newColor) then
+            selectedColor = tonumber(newColor)
+            cTextbox.bColor = selectedColor
+            cTextbox.tColor = color.invert(selectedColor)
+            ui.draw(cTextbox)
+        end
+    end
+    paletteImgEl = ui.image(1, 2, palette)
+    cExit = ui.beautifulButton(2, 34, 15, 3, 0xDCDCDC, 0x660000, "Назад", exitWindow)
+    cDone = ui.beautifulButton(48, 34, 16, 3, 0xDCDCDC, 0x006600, "Готово", done)
+    cTextbox = ui.beautifulTextbox(22, 34, 20, selectedColor, color.invert(selectedColor), "0x" .. string.format("%06X", selectedColor), args)
+    cTextbox.enter = colorEnter
     colorWindow:addObj(paletteImgEl)
     colorWindow:addObj(cExit)
     colorWindow:addObj(cDone)
+    colorWindow:addObj(cTextbox)
     ui.draw(colorWindow)
     ui.checkingObject = colorWindow
+    ui.args.touch = colorTouch
 end
 
 local function toggleFileButton()
@@ -91,7 +117,7 @@ local function setDrawing(type)
     ui.draw(mainBox)
 end
 
-local function touch(obj, x, y)
+touch = function(obj, x, y)
     if obj.id == ui.ID.CANVAS then
         if tool ~= "brush" and tool ~= "eraser" then
             firstX, firstY = x, y
