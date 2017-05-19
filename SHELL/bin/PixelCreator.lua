@@ -14,14 +14,14 @@ local tool = "brush"
 
 -- CONSTANTS
 local toolTypes = {
-    ["brush"]="Кисть",
-    ["eraser"]="Драялка",
-    ["fill"]="Заливка",
-    ["text"]="Текст",
-    ["line"]="Линия",
-    ["ellipse"]="Эллипс",
-    ["emptySq"]="Пустой прямоугольник",
-    ["fillSq"]="Прямоугольник"
+    ["brush"]       = "Кисть",
+    ["eraser"]      = "Драялка",
+    ["fill"]        = "Заливка",
+    ["text"]        = "Текст",
+    ["line"]        = "Линия",
+    ["ellipse"]     = "Эллипс",
+    ["emptySq"]     = "Пустой прямоугольник",
+    ["fillSq"]      = "Прямоугольник"
 }
 
 local touch
@@ -323,7 +323,7 @@ local function init()
     mainImage = image.new("MAIN_IMAGE", 160, 50)
     mainImage:fill(1, 1, 160, 50, " ", 0xFFFFFF, 0)
     canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", mainImage)
-    cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0xFFFFFF, 0, canvas)
+    cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0xFFFFFF, 0, canvas, {hideBar=true})
     mainBox:addObj(cScrollBar)
 end
 
