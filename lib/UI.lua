@@ -12,16 +12,17 @@ local ui = {
     ID = {
         BOX               = 1,
         WINDOW            = 2,
-        STANDART_BUTTON   = 3,
-        BEAUTIFUL_BUTTON  = 4,
-        STANDART_TEXTBOX  = 5,
-        BEAUTIFUL_TEXTBOX = 6,
-        STANDART_CHECKBOX = 7,
-        CONTEXT_MENU      = 8,
-        LISTBOX           = 9,
-        SCROLLBAR         = 10,
-        IMAGE             = 11,
-        CANVAS            = 12
+        LABEL             = 3,
+        STANDART_BUTTON   = 4,
+        BEAUTIFUL_BUTTON  = 5,
+        STANDART_TEXTBOX  = 6,
+        BEAUTIFUL_TEXTBOX = 7,
+        STANDART_CHECKBOX = 8,
+        CONTEXT_MENU      = 9,
+        LISTBOX           = 10,
+        SCROLLBAR         = 11,
+        IMAGE             = 12,
+        CANVAS            = 13
     }
 }
 
@@ -126,6 +127,22 @@ function ui.window(x, y, width, height, bColor, barColor, tColor, title, shadow,
     if not x or not y then newX, newY = ui.centerSquare(width, height) end
     return checkProperties(newX, newY, width, height, {
         bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject, removeObj=removeObject
+    })
+end
+
+--  LABEL  -----------------------------------------------------------------------------------------------
+local function drawLabel(obj)
+    buffer.drawText(obj.globalX, obj.globalY, obj.bColor, obj.tColor, obj.text)
+end
+
+local function setLabelText(obj, text)
+    local length = unicode.len(obj.text)
+    obj.width, obj.text = length, text
+end
+
+function ui.label(x, y, bColor, tColor, text, args)
+    return checkProperties(x, y, unicode.len(text), 1, {
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.LABEL, setText=setLabelText, draw=drawLabel, addObj=addObject, removeObj=removeObject
     })
 end
 
