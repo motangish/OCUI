@@ -36,7 +36,7 @@ function color.HEXToRGB(HEXColor)
 end
 
 function color.RGBToHEX(red, green, blue)
-    return bit32.lshift(red, 16) + bit32.lshift(green, 8) + blue
+    return bit32.lshift(red - 0.5, 16) + bit32.lshift(green - 0.5, 8) + blue - 0.5
 end
 
 function color.blend(color1, color2, alpha)
