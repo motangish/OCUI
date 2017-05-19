@@ -8,7 +8,7 @@ local gpu = require("component").gpu
 -- MAIN PROGRAM
 local width, height, mainImage
 local firstX, firstY, secondX, secondY
-local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, colorButton, fileCM, exitCM
+local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, textButton, colorButton, fileCM, exitCM, textTB
 local tool = "brush"
 
 local touch
@@ -17,6 +17,7 @@ local function disableTools()
     brushButton.args.active = false
     eraserButton.args.active = false
     fillButton.args.active = false
+    textButton.args.active = false
     canvas.drawing = true
 end
 
@@ -54,6 +55,14 @@ local function fillFunc()
     ui.draw(bar)
     tool = "fill"
     canvas.currSymbol = " "
+    canvas.drawing = false
+end
+
+local function textFunc()
+    disableTools()
+    textButton.args.active = true
+    ui.draw(bar)
+    tool = "text"
     canvas.drawing = false
 end
 
@@ -101,7 +110,7 @@ local function colorFunc()
     paletteImgEl = ui.image(1, 2, palette)
     cExit = ui.beautifulButton(2, 34, 15, 3, 0xDCDCDC, 0x660000, "Назад", exitWindow)
     cDone = ui.beautifulButton(48, 34, 16, 3, 0xDCDCDC, 0x006600, "Готово", done)
-    cTextbox = ui.beautifulTextbox(22, 34, 20, selectedColor, color.invert(selectedColor), "0x" .. string.format("%06X", selectedColor), args)
+    cTextbox = ui.beautifulTextbox(22, 34, 20, selectedColor, color.invert(selectedColor), "0x" .. string.format("%06X", selectedColor), 8, args)
     cTextbox.enter = colorEnter
     colorWindow:addObj(paletteImgEl)
     colorWindow:addObj(cExit)
@@ -154,6 +163,17 @@ touch = function(obj, x, y)
             sSymbol = canvas.image.data[index]
             dColor = color.to8Bit(canvas.currBColor)
             fillCheck(x, y - canvas.globalY + 1)
+            ui.draw(mainBox)
+        elseif tool == "text" then
+            local state = not textTB
+            if textTB then canvas:removeObj(textTB) end
+            textTB = ui.standartTextbox(x - canvas.globalX + 1, y - canvas.globalY + 1, canvas.width - (x - canvas.globalX), 0, 0xFFFFFF, "", canvas.width - (x - canvas.globalX))
+            textTB.enter = function(text)
+                canvas:removeObj(textTB)
+                canvas.image:drawText(x - canvas.globalX + 1, y - canvas.globalY + 1, nil, canvas.currTColor, text)
+                ui.draw(mainBox)
+            end
+            canvas:addObj(textTB)
             ui.draw(mainBox)
         elseif tool ~= "brush" and tool ~= "eraser" then
             firstX, firstY = x, y
@@ -250,7 +270,9 @@ local function init()
     bar:addObj(eraserButton)
     fillButton = ui.standartButton(eraserButton.x + eraserButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Заливка", fillFunc, {toggling=true})
     bar:addObj(fillButton)
-    colorButton = ui.standartButton(fillButton.x + fillButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Цвет", colorFunc)
+    textButton = ui.standartButton(fillButton.x + fillButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Текст", textFunc, {toggling=true})
+    bar:addObj(textButton)
+    colorButton = ui.standartButton(textButton.x + textButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Цвет", colorFunc)
     bar:addObj(colorButton)
     exitButton = ui.standartButton(width - 8, 1, nil, 1, 0x660000, 0xFFFFFF, "Выйти", exitFunc)
     bar:addObj(exitButton)
