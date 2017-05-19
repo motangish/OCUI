@@ -63,7 +63,7 @@ end
 
 function ui.centerSquare(width, height)
     local sWidth, sHeight = gpu.getResolution()
-    return sWidth / 2 - width / 2, sHeight / 2 - height / 2
+    return math.floor(sWidth / 2 - width / 2) + 1, math.floor(sHeight / 2 - height / 2) + 1
 end
 
 function ui.centerText(text, width)
@@ -442,8 +442,7 @@ end
 
 --  SCROLLBAR  -------------------------------------------------------------------------------------------
 local function drawScrollbar(obj)
-    local bColor, tColor = obj.bColor, obj.tColor
-    buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor, obj.bColor)
+    buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor, obj.tColor)
     buffer.setDrawing(obj.globalX, obj.globalY, obj.width, obj.height)
     ui.drawObject(obj.object, obj.globalX, obj.globalY)
     buffer.setDefaultDrawing()
@@ -457,23 +456,25 @@ local function drawScrollbar(obj)
 end
 
 local function scrollbarScroll(obj, position, side)
-    if position == -1 then
-        if side == 1 then
-            obj.position = obj.position - 1
-        else
-            obj.position = obj.position + 1
+    if obj.object.height > obj.height then
+        if position == -1 then
+            if side == 1 then
+                obj.position = obj.position - 1
+            else
+                obj.position = obj.position + 1
+            end
+        else obj.position = position end
+        local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
+        if lineHeight < 1 then lineHeight = 1 end
+        if lineHeight > obj.height then lineHeight = obj.height end
+        if obj.position + lineHeight - 1 > obj.height then
+            obj.position = obj.height - lineHeight + 1
+        elseif obj.position < 1 then
+            obj.position = 1
         end
-    else obj.position = position end
-    local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
-    if lineHeight < 1 then lineHeight = 1 end
-    if lineHeight > obj.height then lineHeight = obj.height end
-    if obj.position + lineHeight - 1 > obj.height then
-        obj.position = obj.height - lineHeight + 1
-    elseif obj.position < 1 then
-        obj.position = 1
+        obj.object.y = 1 - math.floor((obj.position - 1) * (obj.object.height / obj.height))
+        ui.draw(obj)
     end
-    obj.object.y = 1 - math.floor((obj.position - 1) * (obj.object.height / obj.height))
-    ui.draw(obj)
 end
 
 local function checkScrollbarClick(obj, x, y)
