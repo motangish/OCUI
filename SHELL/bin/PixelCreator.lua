@@ -47,6 +47,43 @@ local function exitFunc()
     ui.exit()
 end
 
+local function newFile()
+    local newFileWindow, wTB, hTB, cancelButton, doneButton
+    local function cancel()
+        ui.checkingObject = mainBox
+        ui.draw(mainBox)
+    end
+    local function done()
+        local w, h = tonumber(wTB.text), tonumber(hTB.text)
+        if w and h then
+            canvas.x, canvas.y = ui.centerSquare(w, h)
+            canvas.width, canvas.height = w, h
+            canvas.image = image.new("canvas", w, h)
+            canvas.image:fill(1, 1, w, h, " ", 0xFFFFFF, 0)
+            cancel()
+        end
+    end
+    newFileWindow = ui.window(nil, nil, 30, 7, 0xDCDCDC, 0xCDCDCD, 0, "Новый файл", true)
+    wTB = ui.beautifulTextbox(2, 2, 13, 0xC3C3C3, 0x1C1C1C, "Width", 3)
+    hTB = ui.beautifulTextbox(17, 2, 13, 0xC3C3C3, 0x1C1C1C, "Height", 2)
+    cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", cancel)
+    doneButton = ui.beautifulButton(18, 5, 12, 3, 0xDCDCDC, 0x006600, "Готово", done)
+    newFileWindow:addObj(wTB)
+    newFileWindow:addObj(hTB)
+    newFileWindow:addObj(cancelButton)
+    newFileWindow:addObj(doneButton)
+    ui.draw(newFileWindow)
+    ui.checkingObject = newFileWindow
+end
+
+local function openFile( ... )
+    -- body
+end
+
+local function saveFile( ... )
+    -- body
+end
+
 local function brushFunc()
     disableTools()
     brushButton.args.active = true
@@ -308,9 +345,9 @@ local function init()
     exitButton = ui.standartButton(width - 8, 1, nil, 1, 0x660000, 0xFFFFFF, "Выйти", exitFunc)
     bar:addObj(exitButton)
     fileCM = ui.contextMenu(3, 2, 0xDCDCDC, 0, true, {closing=toggleFileButton, alpha=0.1})
-    fileCM:addObj("Новый")
-    fileCM:addObj("Открыть")
-    fileCM:addObj("Сохранить")
+    fileCM:addObj("Новый", newFile)
+    fileCM:addObj("Открыть", openFile)
+    fileCM:addObj("Сохранить", saveFile)
     bar:addObj(fileCM)
     editCM = ui.contextMenu(fileButton.x + fileButton.width + 1, 2, 0xDCDCDC, 0, true, {width=16, closing=toggleEditButton, alpha=0.1})
     editCM:addObj("Линия", setDrawing, "line")
@@ -323,7 +360,7 @@ local function init()
     mainImage = image.new("MAIN_IMAGE", 160, 50)
     mainImage:fill(1, 1, 160, 50, " ", 0xFFFFFF, 0)
     canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", mainImage)
-    cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0xFFFFFF, 0, canvas, {hideBar=true})
+    cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xFFFFFF, canvas, {hideBar=true})
     mainBox:addObj(cScrollBar)
 end
 
