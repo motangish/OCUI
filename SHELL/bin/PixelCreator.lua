@@ -3,10 +3,11 @@ local image = require("IMAGE")
 local buffer = require("IBUFFER")
 local color = require("COLOR")
 local event = require("event")
+local fs = require("filesystem")
 local gpu = require("component").gpu
 
 -- MAIN PROGRAM
-local width, height, mainImage
+local width, height
 local firstX, firstY, secondX, secondY
 local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, textButton, bColorButton, tColorButton, toolLabel,
       fileCM, exitCM, textTB
@@ -56,9 +57,15 @@ local function newFile()
     local function done()
         local w, h = tonumber(wTB.text), tonumber(hTB.text)
         if w and h then
+            if not canvas then
+                canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", image.new("canvas", w, h))
+                cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xFFFFFF, canvas, {hideBar=true})
+                mainBox:addObj(cScrollBar)
+            else
+                canvas.image = image.new("canvas", w, h)
+            end
             canvas.x, canvas.y = ui.centerSquare(w, h)
             canvas.width, canvas.height = w, h
-            canvas.image = image.new("canvas", w, h)
             canvas.image:fill(1, 1, w, h, " ", 0xFFFFFF, 0)
             cancel()
         end
@@ -76,8 +83,33 @@ local function newFile()
     ui.checkingObject = newFileWindow
 end
 
-local function openFile( ... )
-    -- body
+local function openFile()
+    local openFileWindow, pathTB, cancelButton, doneButton
+    local function cancel()
+        ui.checkingObject = mainBox
+        ui.draw(mainBox)
+    end
+    local function done()
+        if fs.exists(pathTB.text) then
+            if canvas then
+                canvas.image = image.load(pathTB.text)
+            else
+                canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", image.load(pathTB.text))
+                cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xFFFFFF, canvas, {hideBar=true})
+                mainBox:addObj(cScrollBar)
+            end
+            cancel()
+        end
+    end
+    openFileWindow = ui.window(nil, nil, 30, 7, 0xDCDCDC, 0xCDCDCD, 0, "Открыть файл", true)
+    pathTB = ui.beautifulTextbox(2, 2, 28, 0xC3C3C3, 0x1C1C1C, "Путь к файлу")
+    cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", cancel)
+    doneButton = ui.beautifulButton(19, 5, 11, 3, 0xDCDCDC, 0x006600, "Открыть", done)
+    openFileWindow:addObj(pathTB)
+    openFileWindow:addObj(cancelButton)
+    openFileWindow:addObj(doneButton)
+    ui.draw(openFileWindow)
+    ui.checkingObject = openFileWindow
 end
 
 local function saveFile( ... )
@@ -226,7 +258,7 @@ touch = function(obj, x, y)
             sColor = canvas.image.data[index + 1]
             sSymbol = canvas.image.data[index]
             dColor = color.to8Bit(canvas.currBColor)
-            fillCheck(x, y - canvas.globalY + 1)
+            fillCheck(x - canvas.globalX + 1, y - canvas.globalY + 1)
             ui.draw(mainBox)
         elseif tool == "text" then
             local state = not textTB
@@ -246,7 +278,7 @@ touch = function(obj, x, y)
 end
 
 local function drag(obj, x, y)
-    if obj.id == ui.ID.CANVAS then
+    if obj.id == ui.ID.CANVAS and firstX and firstY then
         if tool ~= "brush" and tool ~= "eraser" then
             secondX, secondY = x, y
             canvas:draw()
@@ -310,6 +342,7 @@ local function drop(obj, x, y)
                             canvas.image:fill(newX, newY + newH - canvas.globalY, newW, 1, " ", canvas.currBColor, canvas.currTColor)               -- BOTTOM
                         end
                     end
+                    firstX, firstY = nil, nil
                     break
                 end
             end
@@ -321,7 +354,7 @@ local function init()
     ui.initialize()
     width, height = gpu.getResolution()
     -- MAIN BOX
-    mainBox = ui.box(1, 1, width, height, 0xFFFFFF)
+    mainBox = ui.box(1, 1, width, height, 0x1C1C1C)
     -- BAR
     bar = ui.box(1, 1, width, 1, 0xCDCDCD)
     fileButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "Файл", fileFunc, {toggling=true})
@@ -356,12 +389,6 @@ local function init()
     editCM:addObj("Прямоугольник", setDrawing, "fillSq")
     bar:addObj(editCM)
     mainBox:addObj(bar)
-    -- CANVAS SCROLLBAR
-    mainImage = image.new("MAIN_IMAGE", 160, 50)
-    mainImage:fill(1, 1, 160, 50, " ", 0xFFFFFF, 0)
-    canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", mainImage)
-    cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xFFFFFF, canvas, {hideBar=true})
-    mainBox:addObj(cScrollBar)
 end
 
 init()
