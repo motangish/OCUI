@@ -72,6 +72,11 @@ end
 local function addObject(toObj, obj)
     obj.globalX, obj.globalY = toObj.globalX + obj.x - 1, toObj.globalY + obj.y - 1
     table.insert(toObj.objects, obj)
+    obj.index = #toObj.objects
+end
+
+local function removeObject(onObj, obj)
+    onObj.objects[obj.index] = nil
 end
 
 local function checkProperties(x, y, width, height, props)
@@ -97,7 +102,7 @@ end
 
 function ui.box(x, y, width, height, aColor, args)
     return checkProperties(x, y, width, height, {
-        color=aColor, args=args, id=ui.ID.BOX, draw=drawBox, addObj=addObject
+        color=aColor, args=args, id=ui.ID.BOX, draw=drawBox, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -120,7 +125,7 @@ function ui.window(x, y, width, height, bColor, barColor, tColor, title, shadow,
     local newX, newY = x, y
     if not x or not y then newX, newY = ui.centerSquare(width, height) end
     return checkProperties(newX, newY, width, height, {
-        bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject
+        bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -161,7 +166,7 @@ function ui.standartButton(x, y, width, height, bColor, tColor, text, func, args
     local newWidth = width
     if not width then newWidth = unicode.len(text) + 2 end
     return checkProperties(x, y, newWidth, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, addObj=addObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -200,7 +205,7 @@ end
 
 function ui.beautifulButton(x, y, width, height, bColor, tColor, text, func, args)
     return checkProperties(x, y, width, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, flash=flashButton, addObj=addObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -250,18 +255,20 @@ local function writeTextbox(obj)
                 if obj.text ~= "" then obj.text = unicode.sub(obj.text, 1, -2) end
                 ui.draw(obj)
             else
-                local symbol = codeToSymbol(e[3])
-                if symbol then obj.text = obj.text .. symbol end
-                ui.draw(obj)
-                if obj.textChanged then obj.textChanged(obj.text) end
+                if unicode.len(obj.text) < obj.max then
+                    local symbol = codeToSymbol(e[3])
+                    if symbol then obj.text = obj.text .. symbol end
+                    ui.draw(obj)
+                    if obj.textChanged then obj.textChanged(obj.text) end
+                end
             end
         end
     end
 end
 
-function ui.standartTextbox(x, y, width, bColor, tColor, title, args)
+function ui.standartTextbox(x, y, width, bColor, tColor, title, max, args)
     return checkProperties(x, y, width, 1, {
-        bColor=bColor, tColor=tColor, text="", title=title, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject
+        bColor=bColor, tColor=tColor, text="", title=title, max=max, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -290,9 +297,9 @@ local function drawBeautifulTextbox(obj)
     end
 end
 
-function ui.beautifulTextbox(x, y, width, bColor, tColor, title, args)
+function ui.beautifulTextbox(x, y, width, bColor, tColor, title, max, args)
     return checkProperties(x, y, width, 3, {
-        bColor=bColor, tColor=tColor, text="", title=title, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject
+        bColor=bColor, tColor=tColor, text="", title=title, max=max, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -319,7 +326,7 @@ end
 
 function ui.standartCheckbox(x, y, bColor, tColor, args)
     return checkProperties(x, y, 1, 1, {
-        bColor=bColor, tColor=tColor, args=args, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject
+        bColor=bColor, tColor=tColor, args=args, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -460,7 +467,7 @@ end
 
 function ui.scrollbar(x, y, width, height, bColor, tColor, object, args)
     return checkProperties(x, y, width, height, {
-        bColor=bColor, tColor=tColor, object=object, position=1, args=args, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject
+        bColor=bColor, tColor=tColor, object=object, position=1, args=args, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -471,7 +478,7 @@ end
 
 function ui.image(x, y, data)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, id=ui.ID.IMAGE, draw=drawImage, addObj=addObject
+        image=data, id=ui.ID.IMAGE, draw=drawImage, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -482,7 +489,7 @@ end
 
 function ui.canvas(x, y, currBColor, currTColor, currSymbol, data)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, currBColor=currBColor, currTColor=currTColor, currSymbol=currSymbol, drawing=true, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject
+        image=data, currBColor=currBColor, currTColor=currTColor, currSymbol=currSymbol, drawing=true, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject, removeObj=removeObject
     })
 end
 
