@@ -8,9 +8,21 @@ local gpu = require("component").gpu
 -- MAIN PROGRAM
 local width, height, mainImage
 local firstX, firstY, secondX, secondY
-local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, textButton, bColorButton, tColorButton, 
+local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, textButton, bColorButton, tColorButton, toolLabel,
       fileCM, exitCM, textTB
 local tool = "brush"
+
+-- CONSTANTS
+local toolTypes = {
+    ["brush"]="Кисть",
+    ["eraser"]="Драялка",
+    ["fill"]="Заливка",
+    ["text"]="Текст",
+    ["line"]="Линия",
+    ["ellipse"]="Эллипс",
+    ["emptySq"]="Пустой прямоугольник",
+    ["fillSq"]="Прямоугольник"
+}
 
 local touch
 
@@ -38,24 +50,27 @@ end
 local function brushFunc()
     disableTools()
     brushButton.args.active = true
-    ui.draw(bar)
     tool = "brush"
+    toolLabel:setText("Инструмент: " .. toolTypes[tool])
+    ui.draw(bar)
     canvas.currSymbol = " "
 end
 
 local function eraserFunc()
     disableTools()
     eraserButton.args.active = true
-    ui.draw(bar)
     tool = "eraser"
+    toolLabel:setText("Инструмент: " .. toolTypes[tool])
+    ui.draw(bar)
     canvas.currSymbol = -1
 end
 
 local function fillFunc()
     disableTools()
     fillButton.args.active = true
-    ui.draw(bar)
     tool = "fill"
+    toolLabel:setText("Инструмент: " .. toolTypes[tool])
+    ui.draw(bar)
     canvas.currSymbol = " "
     canvas.drawing = false
 end
@@ -63,8 +78,9 @@ end
 local function textFunc()
     disableTools()
     textButton.args.active = true
-    ui.draw(bar)
     tool = "text"
+    toolLabel:setText("Инструмент: " .. toolTypes[tool])
+    ui.draw(bar)
     canvas.drawing = false
 end
 
@@ -141,6 +157,7 @@ end
 
 local function setDrawing(type)
     tool = type
+    toolLabel:setText("Инструмент: " .. toolTypes[tool])
     disableTools()
     canvas.drawing = false
     ui.draw(mainBox)
@@ -286,6 +303,8 @@ local function init()
     bar:addObj(bColorButton)
     tColorButton = ui.standartButton(bColorButton.x + bColorButton.width + 1, 1, nil, 1, 0xFFFFFF, 0, " T ", colorFunc, {touchArgs="tColor"})
     bar:addObj(tColorButton)
+    toolLabel = ui.label(tColorButton.x + tColorButton.width + 2, 1, nil, 0, "Инструмент: " .. toolTypes[tool])
+    bar:addObj(toolLabel)
     exitButton = ui.standartButton(width - 8, 1, nil, 1, 0x660000, 0xFFFFFF, "Выйти", exitFunc)
     bar:addObj(exitButton)
     fileCM = ui.contextMenu(3, 2, 0xDCDCDC, 0, true, {closing=toggleFileButton, alpha=0.1})
