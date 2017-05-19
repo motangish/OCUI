@@ -8,7 +8,8 @@ local gpu = require("component").gpu
 -- MAIN PROGRAM
 local width, height, mainImage
 local firstX, firstY, secondX, secondY
-local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, textButton, colorButton, fileCM, exitCM, textTB
+local mainBox, bar, cScrollBar, canvas, fileButton, editButton, exitButton, brushButton, eraserButton, fillButton, textButton, bColorButton, tColorButton, 
+      fileCM, exitCM, textTB
 local tool = "brush"
 
 local touch
@@ -30,6 +31,7 @@ local function editFunc()
 end
 
 local function exitFunc()
+    mainBox = nil
     ui.exit()
 end
 
@@ -66,10 +68,11 @@ local function textFunc()
     canvas.drawing = false
 end
 
-local function colorFunc()
+local function colorFunc(type)
     local colorWindow = ui.window(nil, nil, 64, 36, 0xDCDCDC, 0xCDCDCD, 0, "Выберите цвет", true)
     local palette = image.new("palette", 64, 32)
-    local selectedColor = canvas.currBColor
+    local selectedColor
+    if type == "bColor" then selectedColor = canvas.currBColor else selectedColor = canvas.currTColor end
     local paletteImgEl, cExit, cDone, cTextbox
     local wP, hP
     local index = 1
@@ -81,13 +84,20 @@ local function colorFunc()
         end
     end
     local function exitWindow()
+        if type == "bColor" then
+            bColorButton.bColor = selectedColor
+            bColorButton.tColor = color.invert(selectedColor)
+        else
+            tColorButton.bColor = selectedColor
+            tColorButton.tColor = color.invert(selectedColor)
+        end
         ui.draw(mainBox)
         ui.checkingObject = mainBox
         ui.args.touch = touch
     end
     local function done()
         exitWindow()
-        canvas.currBColor = selectedColor
+        if type == "bColor" then canvas.currBColor = selectedColor else canvas.currTColor = selectedColor end
     end
     local function colorTouch(obj, x, y)
         local cObj = ui.checkClick(paletteImgEl, x, y)
@@ -272,8 +282,10 @@ local function init()
     bar:addObj(fillButton)
     textButton = ui.standartButton(fillButton.x + fillButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Текст", textFunc, {toggling=true})
     bar:addObj(textButton)
-    colorButton = ui.standartButton(textButton.x + textButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Цвет", colorFunc)
-    bar:addObj(colorButton)
+    bColorButton = ui.standartButton(textButton.x + textButton.width + 2, 1, nil, 1, 0, 0xFFFFFF, " B ", colorFunc, {touchArgs="bColor"})
+    bar:addObj(bColorButton)
+    tColorButton = ui.standartButton(bColorButton.x + bColorButton.width + 1, 1, nil, 1, 0xFFFFFF, 0, " T ", colorFunc, {touchArgs="tColor"})
+    bar:addObj(tColorButton)
     exitButton = ui.standartButton(width - 8, 1, nil, 1, 0x660000, 0xFFFFFF, "Выйти", exitFunc)
     bar:addObj(exitButton)
     fileCM = ui.contextMenu(3, 2, 0xDCDCDC, 0, true, {closing=toggleFileButton, alpha=0.1})
