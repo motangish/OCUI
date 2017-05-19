@@ -127,17 +127,21 @@ local function setDrawing(type)
     ui.draw(mainBox)
 end
 
-local sColor, dColor
+local sColor, dColor, sSymbol, fState
 local function fillCheck(x, y)
     if x > 0 and x <= canvas.image.width and y > 0 and y <= canvas.image.height then
         local index = image.XYToIndex(x, y, canvas.image.width)
-        if (canvas.image.data[index + 1] == sColor and canvas.image.data[index + 1] ~= dColor) or (canvas.image.data[index] == -1) then
-            canvas.image.data[index] = " "
-            canvas.image.data[index + 1] = dColor
-            fillCheck(x + 1, y)
-            fillCheck(x - 1, y)
-            fillCheck(x, y + 1)
-            fillCheck(x, y - 1)
+        if (canvas.image.data[index + 1] == sColor and canvas.image.data[index + 1] ~= dColor) then
+            fState = true
+            if sSymbol == -1 and canvas.image.data[index] ~= -1 then fState = false end
+            if fState then
+                canvas.image.data[index] = " "
+                canvas.image.data[index + 1] = dColor
+                fillCheck(x + 1, y)
+                fillCheck(x - 1, y)
+                fillCheck(x, y + 1)
+                fillCheck(x, y - 1)
+            end
         end
     end
 end
@@ -145,7 +149,9 @@ end
 touch = function(obj, x, y)
     if obj.id == ui.ID.CANVAS then
         if tool == "fill" then
-            sColor = canvas.image.data[image.XYToIndex(x, y - canvas.globalY + 1, canvas.image.width) + 1]
+            local index = image.XYToIndex(x, y - canvas.globalY + 1, canvas.image.width)
+            sColor = canvas.image.data[index + 1]
+            sSymbol = canvas.image.data[index]
             dColor = color.to8Bit(canvas.currBColor)
             fillCheck(x, y - canvas.globalY + 1)
             ui.draw(mainBox)
