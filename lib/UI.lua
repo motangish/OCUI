@@ -284,8 +284,10 @@ local function writeTextbox(obj)
 end
 
 function ui.standartTextbox(x, y, width, bColor, tColor, title, max, args)
+    local newMax = max
+    if not max then newMax = 1000 end
     return checkProperties(x, y, width, 1, {
-        bColor=bColor, tColor=tColor, text="", title=title, max=max, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text="", title=title, max=newMax, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -315,8 +317,10 @@ local function drawBeautifulTextbox(obj)
 end
 
 function ui.beautifulTextbox(x, y, width, bColor, tColor, title, max, args)
+    local newMax = max
+    if not max then newMax = 1000 end
     return checkProperties(x, y, width, 3, {
-        bColor=bColor, tColor=tColor, text="", title=title, max=max, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text="", title=title, max=newMax, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
     })
 end
 
