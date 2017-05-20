@@ -506,7 +506,7 @@ end
 
 --  CANVAS  ----------------------------------------------------------------------------------------------
 local function drawCanvas(obj)
-    buffer.drawImage(obj.globalX, obj.globalY, image.replaceNullSymbols(obj.image, "▒"))
+    buffer.drawImage(obj.globalX, obj.globalY, image.replaceNullSymbols(obj.image, "▒", -1, 0xFFFFFF))
 end
 
 function ui.canvas(x, y, currBColor, currTColor, currSymbol, data)

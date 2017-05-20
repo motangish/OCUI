@@ -136,14 +136,14 @@ function buffer.drawText(x, y, bColor, tColor, text, bit8)
     local index
     local newBColor, newTColor = bColor, tColor
     if not bit8 then
-        if bColor then newBColor = color.to8Bit(bColor) end
+        if bColor and bColor ~= -1 then newBColor = color.to8Bit(bColor) end
         if tColor then newTColor = color.to8Bit(tColor) end
     end
     for i = 1, unicode.len(text) do
         index = image.XYToIndex(x + i - 1, y, buffer.new.width)
         if checkPixel(x + i - 1, y) then
             buffer.new.data[index] = unicode.sub(text, i, i)
-            if bColor then buffer.new.data[index + 1] = newBColor end
+            if bColor and bColor ~= -1 then buffer.new.data[index + 1] = newBColor end
             if tColor then buffer.new.data[index + 2] = newTColor end
         end
     end

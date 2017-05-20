@@ -58,17 +58,19 @@ function image.crop(x, y, width, height, imageToCrop)
     return cropped
 end
 
-function image.replaceNullSymbols(imageToReplace, symbol)
+function image.replaceNullSymbols(imageToReplace, symbol, bColor, tColor)
     local replaced = image.new("replaced", imageToReplace.width, imageToReplace.height)
     local index, iP1, iP2
+    local bColor8Bit, tColor8Bit = bColor, color.to8Bit(tColor)
+    if bColor ~= -1 then bColor8Bit = color8Bit(bColor) end
     for h = 1, imageToReplace.height do
         for w = 1, imageToReplace.width do
             index = image.XYToIndex(w, h, imageToReplace.width)
             iP1, iP2 = index + 1, index + 2
             if imageToReplace.data[index] == -1 then
                 replaced.data[index] = symbol
-                replaced.data[iP1] = 0xFF
-                replaced.data[iP2] = 0
+                replaced.data[iP1] = bColor8Bit
+                replaced.data[iP2] = tColor8Bit
             else
                 replaced.data[index] = imageToReplace.data[index]
                 replaced.data[iP1] = imageToReplace.data[iP1]
@@ -341,17 +343,18 @@ function image:drawEllipse(nX, nY, nX2, nY2, aColor, dPixel, bit8)
     end
 end
 
-function image:drawText(x, y, bColor, tColor, text, bit8)
+function image:drawText(x, y, bColor, tColor, text, bit8, symbol)
     local index
     local newBColor, newTColor = bColor, tColor
     if not bit8 then
-        if bColor then newBColor = color.to8Bit(bColor) end
+        if bColor and bColor ~= -1 then newBColor = color.to8Bit(bColor) end
         if tColor then newTColor = color.to8Bit(tColor) end
     end
     for i = 1, unicode.len(text) do
         index = image.XYToIndex(x + i - 1, y, self.width)
+        if bColor and bColor ~= -1 then self.data[index + 1] = newBColor
+        elseif self.data[index] == symbol then self.data[index + 1] = -1 end
         self.data[index] = unicode.sub(text, i, i)
-        if bColor then self.data[index + 1] = newBColor end
         if tColor then self.data[index + 2] = newTColor end
     end
 end
