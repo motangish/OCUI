@@ -76,6 +76,7 @@ local function newFile()
                 showAllFuncs()
             else
                 canvas.image = image.new("canvas", w, h)
+                cScrollBar.args.hideBar = w >= 160
             end
             canvas.x, canvas.y = ui.centerSquare(w, h)
             canvas.width, canvas.height = w, h
@@ -307,7 +308,7 @@ touch = function(obj, x, y)
             textTB = ui.standartTextbox(x - canvas.globalX + 1, y - canvas.globalY + 1, canvas.width - (x - canvas.globalX), 0, 0xFFFFFF, "", canvas.width - (x - canvas.globalX))
             textTB.enter = function(text)
                 canvas:removeObj(textTB)
-                canvas.image:drawText(x - canvas.globalX + 1, y - canvas.globalY + 1, nil, canvas.currTColor, text)
+                canvas.image:drawText(x - canvas.globalX + 1, y - canvas.globalY + 1, nil, canvas.currTColor, text, false, -1)
                 ui.draw(mainBox)
             end
             canvas:addObj(textTB)
