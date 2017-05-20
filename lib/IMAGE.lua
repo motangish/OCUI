@@ -1,5 +1,6 @@
 local color = require("COLOR")
 local sr = require("serialization")
+local fs = require("filesystem")
 local unicode = require("unicode")
 local cmp = require("component")
 local comp = require("computer")
@@ -377,6 +378,8 @@ function image:optimizeTo8Bit()
 end
 
 function image:save(path)
+    fs.makeDirectory(path)
+    if fs.exists(path) then fs.remove(path) end
     local file = io.open(path, "w")
     file:write(sr.serialize(self))
     file:close()
