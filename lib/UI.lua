@@ -548,7 +548,7 @@ function ui.handleEvents(obj, args)
         local e = {event.pull()}
         local clickedObj
         if e[3] and e[4] then clickedObj = ui.checkClick(ui.checkingObject, e[3], e[4]) end
-        if clickedObj then
+        if clickedObj and clickedObj.args.enabled and clickedObj.args.visible then
             local newClickedObj = clickedObj
             -- Checking scrollbar object
             if clickedObj.object then
