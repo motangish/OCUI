@@ -27,6 +27,18 @@ local toolTypes = {
 
 local touch
 
+local function showAllFuncs()
+    editButton.args.visible = true
+    brushButton.args.visible = true
+    eraserButton.args.visible = true
+    fillButton.args.visible = true
+    textButton.args.visible = true
+    bColorButton.args.visible = true
+    tColorButton.args.visible = true
+    toolLabel.args.visible = true
+    ui.draw(bar)
+end
+
 local function disableTools()
     brushButton.args.active = false
     eraserButton.args.active = false
@@ -59,14 +71,15 @@ local function newFile()
         if w and h then
             if not canvas then
                 canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", image.new("canvas", w, h))
-                cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xFFFFFF, canvas, {hideBar=true})
+                cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xDCDCDC, canvas, {hideBar=w>=160})
                 mainBox:addObj(cScrollBar)
+                showAllFuncs()
             else
                 canvas.image = image.new("canvas", w, h)
             end
             canvas.x, canvas.y = ui.centerSquare(w, h)
             canvas.width, canvas.height = w, h
-            canvas.image:fill(1, 1, w, h, " ", 0xFFFFFF, 0)
+            canvas.image:fill(1, 1, w, h, -1, 0xFFFFFF, 0)
             cancel()
         end
     end
@@ -91,14 +104,19 @@ local function openFile()
     end
     local function done()
         if fs.exists(pathTB.text) then
+            local currBColor, currTColor
+            local drawing = true
             if canvas then
-                canvas.image = image.load(pathTB.text)
-            else
-                canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", image.load(pathTB.text))
-                cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xFFFFFF, canvas, {hideBar=true})
-                mainBox:addObj(cScrollBar)
+                mainBox:removeObj(cScrollBar)
+                drawing, currBColor, currTColor, currSymbol = canvas.drawing, canvas.currBColor, canvas.currTColor, canvas.currSymbol
             end
+            canvas = ui.canvas(1, 1, currBColor or 0, currTColor or 0xFFFFFF, currSymbol or " ", image.load(pathTB.text))
+            canvas.x, canvas.y = ui.centerSquare(canvas.image.width, canvas.image.height)
+            canvas.drawing = drawing
+            cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xDCDCDC, canvas, {hideBar=canvas.image.width>=160})
+            mainBox:addObj(cScrollBar)
             cancel()
+            showAllFuncs()
         end
     end
     openFileWindow = ui.window(nil, nil, 30, 7, 0xDCDCDC, 0xCDCDCD, 0, "Открыть файл", true)
@@ -236,7 +254,7 @@ local sColor, dColor, sSymbol, fState
 local function fillCheck(x, y)
     if x > 0 and x <= canvas.image.width and y > 0 and y <= canvas.image.height then
         local index = image.XYToIndex(x, y, canvas.image.width)
-        if (canvas.image.data[index + 1] == sColor and canvas.image.data[index + 1] ~= dColor) then
+        if canvas.image.data[index + 1] == sColor and (canvas.image.data[index + 1] ~= dColor or canvas.image.data[index] == -1) then
             fState = true
             if sSymbol == -1 and canvas.image.data[index] ~= -1 then fState = false end
             if fState then
@@ -254,11 +272,12 @@ end
 touch = function(obj, x, y)
     if obj.id == ui.ID.CANVAS then
         if tool == "fill" then
-            local index = image.XYToIndex(x, y - canvas.globalY + 1, canvas.image.width)
+            local index = image.XYToIndex(x - canvas.globalX + 1, y - canvas.globalY + 1, canvas.image.width)
             sColor = canvas.image.data[index + 1]
             sSymbol = canvas.image.data[index]
             dColor = color.to8Bit(canvas.currBColor)
             fillCheck(x - canvas.globalX + 1, y - canvas.globalY + 1)
+            sColor, dColor, sSymbol, fState = nil, nil, nil, nil
             ui.draw(mainBox)
         elseif tool == "text" then
             local state = not textTB
@@ -320,9 +339,9 @@ local function drop(obj, x, y)
                     break
                 elseif e[1] == "key_down" and e[4] == 0x1C then
                     if tool == "line" then
-                        canvas.image:drawLine(firstX, firstY - canvas.globalY + 1, secondX, secondY - canvas.globalY + 1, " ", canvas.currBColor, canvas.currTColor)
+                        canvas.image:drawLine(firstX - canvas.globalX + 1, firstY - canvas.globalY + 1, secondX - canvas.globalX + 1, secondY - canvas.globalY + 1, " ", canvas.currBColor, canvas.currTColor)
                     elseif tool == "ellipse" then
-                        canvas.image:drawEllipse(firstX, firstY - canvas.globalY + 1, secondX, secondY - canvas.globalY + 1, canvas.currBColor)
+                        canvas.image:drawEllipse(firstX - canvas.globalX + 1, firstY - canvas.globalY + 1, secondX - canvas.globalX + 1, secondY - canvas.globalY + 1, canvas.currBColor)
                     elseif tool == "emptySq" or tool == "fillSq" then
                         local newX, newY, newW, newH = firstX, firstY, secondX - firstX + 1, secondY - firstY + 1
                         if secondX < firstX then
@@ -334,12 +353,12 @@ local function drop(obj, x, y)
                             newH = firstY - secondY
                         end
                         if tool == "fillSq" then
-                            canvas.image:fill(newX, newY - canvas.globalY + 1, newW, newH, " ", canvas.currBColor, canvas.currTColor)
+                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 1, newW, newH, " ", canvas.currBColor, canvas.currTColor)
                         else
-                            canvas.image:fill(newX, newY - canvas.globalY + 1, newW, 1, " ", canvas.currBColor, canvas.currTColor)                  -- TOP
-                            canvas.image:fill(newX, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)              -- LEFT
-                            canvas.image:fill(newX + newW - 2, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)   -- RIGHT
-                            canvas.image:fill(newX, newY + newH - canvas.globalY, newW, 1, " ", canvas.currBColor, canvas.currTColor)               -- BOTTOM
+                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 1, newW, 1, " ", canvas.currBColor, canvas.currTColor)                  -- TOP
+                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)              -- LEFT
+                            canvas.image:fill(newX + newW - canvas.globalX - 1, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)   -- RIGHT
+                            canvas.image:fill(newX - canvas.globalX + 1, newY + newH - canvas.globalY, newW, 1, " ", canvas.currBColor, canvas.currTColor)               -- BOTTOM
                         end
                     end
                     firstX, firstY = nil, nil
@@ -359,21 +378,21 @@ local function init()
     bar = ui.box(1, 1, width, 1, 0xCDCDCD)
     fileButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "Файл", fileFunc, {toggling=true})
     bar:addObj(fileButton)
-    editButton = ui.standartButton(fileButton.x + fileButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Редактирование", editFunc, {toggling=true})
+    editButton = ui.standartButton(fileButton.x + fileButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Редактирование", editFunc, {toggling=true, visible=false})
     bar:addObj(editButton)
-    brushButton = ui.standartButton(editButton.x + editButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Кисть", brushFunc, {active=true, toggling=true})
+    brushButton = ui.standartButton(editButton.x + editButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Кисть", brushFunc, {active=true, toggling=true, visible=false})
     bar:addObj(brushButton)
-    eraserButton = ui.standartButton(brushButton.x + brushButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Драялка", eraserFunc, {toggling=true})
+    eraserButton = ui.standartButton(brushButton.x + brushButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Драялка", eraserFunc, {toggling=true, visible=false})
     bar:addObj(eraserButton)
-    fillButton = ui.standartButton(eraserButton.x + eraserButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Заливка", fillFunc, {toggling=true})
+    fillButton = ui.standartButton(eraserButton.x + eraserButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Заливка", fillFunc, {toggling=true, visible=false})
     bar:addObj(fillButton)
-    textButton = ui.standartButton(fillButton.x + fillButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Текст", textFunc, {toggling=true})
+    textButton = ui.standartButton(fillButton.x + fillButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Текст", textFunc, {toggling=true, visible=false})
     bar:addObj(textButton)
-    bColorButton = ui.standartButton(textButton.x + textButton.width + 2, 1, nil, 1, 0, 0xFFFFFF, " B ", colorFunc, {touchArgs="bColor"})
+    bColorButton = ui.standartButton(textButton.x + textButton.width + 2, 1, nil, 1, 0, 0xFFFFFF, " B ", colorFunc, {touchArgs="bColor", visible=false})
     bar:addObj(bColorButton)
-    tColorButton = ui.standartButton(bColorButton.x + bColorButton.width + 1, 1, nil, 1, 0xFFFFFF, 0, " T ", colorFunc, {touchArgs="tColor"})
+    tColorButton = ui.standartButton(bColorButton.x + bColorButton.width + 1, 1, nil, 1, 0xFFFFFF, 0, " T ", colorFunc, {touchArgs="tColor", visible=false})
     bar:addObj(tColorButton)
-    toolLabel = ui.label(tColorButton.x + tColorButton.width + 2, 1, nil, 0, "Инструмент: " .. toolTypes[tool])
+    toolLabel = ui.label(tColorButton.x + tColorButton.width + 2, 1, nil, 0, "Инструмент: " .. toolTypes[tool], {visible=false})
     bar:addObj(toolLabel)
     exitButton = ui.standartButton(width - 8, 1, nil, 1, 0x660000, 0xFFFFFF, "Выйти", exitFunc)
     bar:addObj(exitButton)
