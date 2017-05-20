@@ -44,7 +44,7 @@ function color.blend(color1, color2, alpha)
     local color1Red, color1Green, color1Blue = color.HEXToRGB(color1)
     local color2Red, color2Green, color2Blue = color.HEXToRGB(color2)
     return color.RGBToHEX(
-        color2Red   * invertedAlpha + color1Red   * alpha, 
+        color2Red   * invertedAlpha + color1Red   * alpha,
         color2Green * invertedAlpha + color1Green * alpha,
         color2Blue  * invertedAlpha + color1Blue  * alpha
     )

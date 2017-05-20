@@ -43,7 +43,7 @@ function buffer.setDefaultDrawing()
 end
 
 function buffer.setPixel(x, y, symbol, bColor, tColor, bit8)
-    if checkPixel(x, y) then
+    if checkPixel(x, y) and bColor ~= -1 then
         buffer.new:setPixel(x, y, symbol, bColor, tColor, bit8)
     end
 end
@@ -142,8 +142,9 @@ function buffer.drawText(x, y, bColor, tColor, text, bit8)
     for i = 1, unicode.len(text) do
         index = image.XYToIndex(x + i - 1, y, buffer.new.width)
         if checkPixel(x + i - 1, y) then
+            if bColor and bColor ~= -1 then buffer.new.data[index + 1] = newBColor
+            elseif buffer.new.data[index] == symbol then buffer.new.data[index + 1] = -1 end
             buffer.new.data[index] = unicode.sub(text, i, i)
-            if bColor and bColor ~= -1 then buffer.new.data[index + 1] = newBColor end
             if tColor then buffer.new.data[index + 2] = newTColor end
         end
     end

@@ -15,14 +15,15 @@ local ui = {
         LABEL             = 3,
         STANDART_BUTTON   = 4,
         BEAUTIFUL_BUTTON  = 5,
-        STANDART_TEXTBOX  = 6,
-        BEAUTIFUL_TEXTBOX = 7,
-        STANDART_CHECKBOX = 8,
-        CONTEXT_MENU      = 9,
-        LISTBOX           = 10,
-        SCROLLBAR         = 11,
-        IMAGE             = 12,
-        CANVAS            = 13
+        IMAGED_BUTTON     = 6,
+        STANDART_TEXTBOX  = 7,
+        BEAUTIFUL_TEXTBOX = 8,
+        STANDART_CHECKBOX = 9,
+        CONTEXT_MENU      = 10,
+        LISTBOX           = 11,
+        SCROLLBAR         = 12,
+        IMAGE             = 13,
+        CANVAS            = 14
     }
 }
 
@@ -68,6 +69,16 @@ end
 
 function ui.centerText(text, width)
     return math.floor(width / 2 - unicode.len(text) / 2)
+end
+
+function ui.resizeText(text, max)
+    if unicode.len(text) > max then return unicode.sub(text, 1, max - 1) .. "…" else return text end
+end
+
+function ui.getFormatOfFile(path)
+  local fileName = fs.name(path)
+  local first, second = string.find(fileName, "(.)%.[%d%w]*$")
+  if first then return unicode.sub(fileName, first + 1, -1) end
 end
 
 local function addObject(toObj, obj)
@@ -223,6 +234,21 @@ end
 function ui.beautifulButton(x, y, width, height, bColor, tColor, text, func, args)
     return checkProperties(x, y, width, height, {
         bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
+    })
+end
+
+--  IMAGED BUTTON  ---------------------------------------------------------------------------------------
+local function drawImagedButton(obj)
+    if obj.args.active then
+        buffer.drawImage(obj.globalX, obj.globalY, image.invert(obj.image))
+    else
+        buffer.drawImage(obj.globalX, obj.globalY, obj.image)
+    end
+end
+
+function ui.imagedButton(x, y, data, func, args)
+    return checkProperties(x, y, data.width, data.height, {
+        image=data, args=args, id=ui.ID.IMAGED_BUTTON, draw=drawImagedButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -561,19 +587,23 @@ function ui.handleEvents(obj, args)
                 end
             end
             if e[1] == "touch" then
-                if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON then newClickedObj:flash() 
+                if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON or newClickedObj.id == ui.ID.IMAGED_BUTTON then newClickedObj:flash() 
                 elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write() 
                 elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() 
                 elseif newClickedObj.id == ui.ID.CANVAS and newClickedObj.drawing then
                     local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
-                    newClickedObj.image:setPixel(x, y, newClickedObj.currSymbol, newClickedObj.currBColor)
-                    buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
-                    buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
                     if newClickedObj.currSymbol == -1 then
-                        gpu.setBackground(0xFFFFFF)
-                        gpu.setForeground(0)
+                        newClickedObj.image:setPixel(x, y, -1, 0xFFFFFF)
+                        buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, nl, 0xFFFFFF)
+                        buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, nil, 0xFFFFFF)
+                        local symbol, bColor, tColor = buffer.getPixel(e[3], e[4])
+                        gpu.setBackground(bColor)
+                        gpu.setForeground(tColor)
                         gpu.set(e[3], e[4], "▒")
                     else
+                        newClickedObj.image:setPixel(x, y, newClickedObj.currSymbol, newClickedObj.currBColor)
+                        buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
+                        buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
                         gpu.setBackground(newClickedObj.currBColor)
                         gpu.setForeground(newClickedObj.currTColor)
                         gpu.set(e[3], e[4], newClickedObj.currSymbol)
@@ -599,14 +629,18 @@ function ui.handleEvents(obj, args)
                 end
                 if newClickedObj.id == ui.ID.CANVAS and newClickedObj.drawing then
                     local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
-                    newClickedObj.image:setPixel(x, y, newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currBColor)
-                    buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
-                    buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
                     if newClickedObj.currSymbol == -1 then
-                        gpu.setBackground(0xFFFFFF)
-                        gpu.setForeground(0)
+                        newClickedObj.image:setPixel(x, y, -1, 0xFFFFFF)
+                        buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, nil, 0xFFFFFF)
+                        buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, nil, 0xFFFFFF)
+                        local symbol, bColor, tColor = buffer.getPixel(e[3], e[4])
+                        gpu.setBackground(bColor)
+                        gpu.setForeground(tColor)
                         gpu.set(e[3], e[4], "▒")
                     else
+                        newClickedObj.image:setPixel(x, y, newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currBColor)
+                        buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
+                        buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, newClickedObj.currBColor, newClickedObj.currTColor)
                         gpu.setBackground(newClickedObj.currBColor)
                         gpu.setForeground(newClickedObj.currTColor)
                         gpu.set(e[3], e[4], newClickedObj.currSymbol)

@@ -232,6 +232,7 @@ local function colorFunc(type)
             selectedColor = bColor
             cTextbox.bColor = selectedColor
             cTextbox.tColor = color.invert(selectedColor)
+            cTextbox.text = "0x" .. string.format("%06X", selectedColor)
             ui.draw(cTextbox)
         end
     end
@@ -378,10 +379,10 @@ local function drop(obj, x, y)
                         if tool == "fillSq" then
                             canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 1, newW, newH, " ", canvas.currBColor, canvas.currTColor)
                         else
-                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 1, newW, 1, " ", canvas.currBColor, canvas.currTColor)                  -- TOP
-                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)              -- LEFT
-                            canvas.image:fill(newX + newW - canvas.globalX - 1, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)   -- RIGHT
-                            canvas.image:fill(newX - canvas.globalX + 1, newY + newH - canvas.globalY, newW, 1, " ", canvas.currBColor, canvas.currTColor)               -- BOTTOM
+                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 1, newW, 1, " ", canvas.currBColor, canvas.currTColor)             -- TOP
+                            canvas.image:fill(newX - canvas.globalX + 1, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)         -- LEFT
+                            canvas.image:fill(newX + newW - canvas.globalX - 1, newY - canvas.globalY + 2, 2, newH - 2, " ", canvas.currBColor, canvas.currTColor)  -- RIGHT
+                            canvas.image:fill(newX - canvas.globalX + 1, newY + newH - canvas.globalY, newW, 1, " ", canvas.currBColor, canvas.currTColor)          -- BOTTOM
                         end
                     end
                     firstX, firstY = nil, nil

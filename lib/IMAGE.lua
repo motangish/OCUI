@@ -58,6 +58,24 @@ function image.crop(x, y, width, height, imageToCrop)
     return cropped
 end
 
+function image.invert(imageToInvert)
+    local inverted = image.new("inverted", imageToInvert.width, imageToInvert.height)
+    local index
+    for h = 1, imageToInvert.height do
+        for w = 1, imageToInvert.width do
+            index = image.XYToIndex(w, h, imageToInvert.width)
+            inverted.data[index] = imageToInvert.data[index]
+            if imageToInvert.data[index + 1] == -1 then
+                inverted.data[index + 1] = -1
+            else
+                inverted.data[index + 1] = color.invert(imageToInvert.data[index + 1], true)
+            end
+            inverted.data[index + 2] = color.invert(imageToInvert.data[index + 2], true)
+        end
+    end
+    return inverted
+end
+
 function image.replaceNullSymbols(imageToReplace, symbol, bColor, tColor)
     local replaced = image.new("replaced", imageToReplace.width, imageToReplace.height)
     local index, iP1, iP2
