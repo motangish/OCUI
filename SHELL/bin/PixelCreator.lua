@@ -279,7 +279,7 @@ local function fillCheck(x, y)
         local index = image.XYToIndex(x, y, canvas.image.width)
         if canvas.image.data[index + 1] == sColor and (canvas.image.data[index + 1] ~= dColor or canvas.image.data[index] == -1) then
             fState = true
-            if sSymbol == -1 and canvas.image.data[index] ~= -1 then fState = false end
+            if (sSymbol == -1 and canvas.image.data[index] ~= -1) or (sSymbol ~= -1 and canvas.image.data[index] == -1) then fState = false end
             if fState then
                 canvas.image.data[index] = " "
                 canvas.image.data[index + 1] = dColor
