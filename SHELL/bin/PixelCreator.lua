@@ -104,6 +104,7 @@ local function openFile()
     end
     local function done()
         if fs.exists(pathTB.text) then
+            if string.sub(pathTB.text, 1, 1) ~= "/" then pathTB.text = "/" .. pathTB.text end
             local currBColor, currTColor
             local drawing = true
             if canvas then
@@ -130,8 +131,29 @@ local function openFile()
     ui.checkingObject = openFileWindow
 end
 
-local function saveFile( ... )
-    -- body
+local function saveFile()
+    if canvas then
+        local fileWindow, pathTB, cancelButton, doneButton
+        local function cancel()
+            ui.checkingObject = mainBox
+            ui.draw(mainBox)
+        end
+        local function done()
+            if pathTB.text ~= "" then
+                canvas.image:save(pathTB.text)
+                cancel()
+            end
+        end
+        fileWindow = ui.window(nil, nil, 30, 7, 0xDCDCDC, 0xCDCDCD, 0, "Сохранить файл", true)
+        pathTB = ui.beautifulTextbox(2, 2, 28, 0xC3C3C3, 0x1C1C1C, "Путь к файлу")
+        cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", cancel)
+        doneButton = ui.beautifulButton(17, 5, 13, 3, 0xDCDCDC, 0x006600, "Сохранить", done)
+        fileWindow:addObj(pathTB)
+        fileWindow:addObj(cancelButton)
+        fileWindow:addObj(doneButton)
+        ui.draw(fileWindow)
+        ui.checkingObject = fileWindow
+    end
 end
 
 local function brushFunc()
