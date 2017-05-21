@@ -132,7 +132,7 @@ function image.compress(imageToCompress)
                 end
                 lX, lY, lWidth, lData = 0, 0, 0, ""
             end
-        end  
+        end
     end
     elements = nil
     compressedImage.compressed = true
@@ -309,7 +309,7 @@ function image:drawCircle(xC, yC, radius, aColor, dPixel, bit8)
         setPixels(y, x)
         if (delta < 0) then
             delta = delta + (4 * x + 6)
-        else 
+        else
             delta = delta + (4 * (x - y) + 10)
             y = y - 1
         end
