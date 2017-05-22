@@ -5,7 +5,7 @@ local gpu = require("component").gpu
 
 local buffer = {}
 
-function buffer.initialize(width, height)
+function buffer.initialize(width, height, gpuFilling)
     local newWidth, newHeight
     if width and height then
         newWidth, newHeight = width, height
@@ -20,9 +20,11 @@ function buffer.initialize(width, height)
     buffer.old = image.new("old", newWidth, newHeight)
     buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
     buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
-    gpu.setBackground(0x1C1C1C)
-    gpu.setForeground(0xFFFFFF)
-    gpu.fill(1, 1, newWidth, newHeight, " ")
+    if gpuFilling then
+        gpu.setBackground(0x1C1C1C)
+        gpu.setForeground(0xFFFFFF)
+        gpu.fill(1, 1, newWidth, newHeight, " ")
+    end
 end
 
 local function floor(number)
@@ -133,19 +135,21 @@ function buffer.drawEllipse(x, y, width, height, aColor, dPixel, bit8)
 end
 
 function buffer.drawText(x, y, bColor, tColor, text, bit8)
-    local index
-    local newBColor, newTColor = bColor, tColor
-    if not bit8 then
-        if bColor and bColor ~= -1 then newBColor = color.to8Bit(bColor) end
-        if tColor then newTColor = color.to8Bit(tColor) end
-    end
-    for i = 1, unicode.len(text) do
-        index = image.XYToIndex(x + i - 1, y, buffer.new.width)
-        if checkPixel(x + i - 1, y) then
-            if bColor and bColor ~= -1 then buffer.new.data[index + 1] = newBColor
-            elseif buffer.new.data[index] == symbol then buffer.new.data[index + 1] = -1 end
-            buffer.new.data[index] = unicode.sub(text, i, i)
-            if tColor then buffer.new.data[index + 2] = newTColor end
+    if y <= buffer.height then
+        local index
+        local newBColor, newTColor = bColor, tColor
+        if not bit8 then
+            if bColor and bColor ~= -1 then newBColor = color.to8Bit(bColor) end
+            if tColor then newTColor = color.to8Bit(tColor) end
+        end
+        for i = 1, unicode.len(text) do
+            index = image.XYToIndex(x + i - 1, y, buffer.new.width)
+            if checkPixel(x + i - 1, y) then
+                if bColor and bColor ~= -1 then buffer.new.data[index + 1] = newBColor
+                elseif buffer.new.data[index] == symbol then buffer.new.data[index + 1] = -1 end
+                buffer.new.data[index] = unicode.sub(text, i, i)
+                if tColor then buffer.new.data[index + 2] = newTColor end
+            end
         end
     end
 end
@@ -161,6 +165,17 @@ function buffer.drawImage(x, y, img)
         end
     else
         buffer.drawImage(x, y, image.compress(img))
+    end
+end
+
+function buffer.crop(x, y, width, height)
+    if x <= buffer.width and y <= buffer.height then
+        local newX, newY, newWidth, newHeight = x, y, width, height
+        if x < 1 then newX = 1 end
+        if y < 1 then newY = 1 end
+        if x + width - 1 > buffer.width then newWidth = buffer.width - newX + 1 end
+        if y + height - 1 > buffer.height then newHeight = buffer.height - newY + 1 end
+        return image.crop(newX, newY, newWidth, newHeight, buffer.new)
     end
 end
 

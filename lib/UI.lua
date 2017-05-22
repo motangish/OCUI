@@ -3,6 +3,7 @@ local image = require("IMAGE")
 local color = require("COLOR")
 local event = require("event")
 local unicode = require("unicode")
+local fs = require("filesystem")
 local kb = require("keyboard")
 local term = require("term")
 local gpu = require("component").gpu
@@ -27,8 +28,8 @@ local ui = {
     }
 }
 
-function ui.initialize()
-    buffer.initialize()
+function ui.initialize(gpuFilling)
+    buffer.initialize(nil, nil, gpuFilling)
 end
 
 function ui.exit(bColor, tColor)
@@ -50,6 +51,10 @@ local function codeToSymbol(code)
         if kb.isShiftPressed then symbol = unicode.upper(symbol) end
     end
     return symbol
+end
+
+function ui.addQuotes(text)
+    return string.format('%q', text)
 end
 
 function ui.checkClick(obj, x, y)
@@ -177,6 +182,15 @@ local function drawStandartButton(obj)
     end
 end
 
+local function toggleButton(obj)
+    if obj.args.active then
+        obj.args.active = false
+    else
+        obj.args.active = true
+    end
+    ui.draw(obj)
+end
+
 local function flashButton(obj, delay)
     if obj.args.toggling then
         if obj.args.active then obj.args.active = false else obj.args.active = true end
@@ -194,7 +208,7 @@ function ui.standartButton(x, y, width, height, bColor, tColor, text, func, args
     local newWidth = width
     if not width then newWidth = unicode.len(text) + 2 end
     return checkProperties(x, y, newWidth, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, toggle=toggleButton, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -233,7 +247,7 @@ end
 
 function ui.beautifulButton(x, y, width, height, bColor, tColor, text, func, args)
     return checkProperties(x, y, width, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, toggle=toggleButton, flash=flashButton, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -248,7 +262,7 @@ end
 
 function ui.imagedButton(x, y, data, func, args)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, args=args, id=ui.ID.IMAGED_BUTTON, draw=drawImagedButton, touch=func, flash=flashButton, addObj=addObject, removeObj=removeObject
+        image=data, args=args, id=ui.ID.IMAGED_BUTTON, draw=drawImagedButton, touch=func, flash=flashButton, toggle=toggleButton, addObj=addObject, removeObj=removeObject
     })
 end
 
@@ -383,15 +397,19 @@ end
 
 --  CONTEXT MENU  ----------------------------------------------------------------------------------------
 local function drawContextMenu(obj)
-    if obj.showing then
-        obj.image = image.crop(obj.globalX, obj.globalY, obj.width + 1, obj.height + 1, buffer.new)
+    if obj.args.visible then
+        obj.image = buffer.crop(obj.globalX, obj.globalY, obj.width + 1, obj.height + 1)
         for i = 1, #obj.objs do
             if obj.args.alpha then
                 buffer.fillBlend(obj.globalX, obj.globalY + i - 1, obj.width, 1, obj.bColor, obj.args.alpha)
             else
                 buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", obj.bColor)
             end
-            buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, obj.tColor, obj.objs[i][1])
+            if obj.objs[i][1] == -1 then
+                buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, "─", nil, nil)
+            else
+                buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, obj.tColor, obj.objs[i][1])
+            end
         end
         if obj.shadow then
             buffer.fillBlend(obj.globalX + obj.width, obj.globalY * 2, 1, obj.height * 2, 0, 0.5, true)
@@ -402,47 +420,54 @@ end
 
 local function doContextMenu(obj)
     local state = true
-    obj.showing = true
+    obj.args.visible = true
     drawContextMenu(obj)
     buffer.draw()
     while state do
         local e = {event.pull()}
         if e[1] == "touch" then
-            local clickedObj
+            local clickedObj, clickedSep
             for i = 1, #obj.objs do
                 if e[3] >= obj.globalX and e[3] <= obj.globalX + obj.width - 1 and e[4] == obj.globalY + i - 1 then
-                    buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", color.invert(obj.bColor))
-                    buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, color.invert(obj.tColor), obj.objs[i][1])
-                    buffer.draw()
-                    os.sleep(0.3)
-                    buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", obj.bColor)
-                    buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, obj.tColor, obj.objs[i][1])
-                    buffer.draw()
+                    if not (obj.objs[i][1] == -1) then
+                        buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", color.invert(obj.bColor))
+                        buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, color.invert(obj.tColor), obj.objs[i][1])
+                        buffer.draw()
+                        os.sleep(0.3)
+                        buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", obj.bColor)
+                        buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, obj.tColor, obj.objs[i][1])
+                        buffer.draw()
+                    end
                     clickedObj = obj.objs[i]
                     break
                 end
             end
-            obj.showing, state = false, false
-            buffer.drawImage(obj.globalX, obj.globalY, obj.image)
-            buffer.draw()
-            if obj.args.closing then obj.args.closing() end
-            if clickedObj and clickedObj[2] then clickedObj[2](clickedObj[3]) end
+            if not clickedObj or not (clickedObj[1] == -1) then
+                obj.args.visible, state = false, false
+                buffer.drawImage(obj.globalX, obj.globalY, obj.image)
+                buffer.draw()
+                if obj.args.closing then obj.args.closing() end
+                if clickedObj and clickedObj[2] then clickedObj[2](clickedObj[3]) end
+            end
         end
     end
 end
 
 local function addContextMenuObject(obj, text, func, args)
-    local length = unicode.len(text)
-    if length + 2 > obj.width then obj.width = length + 2 end
+    if not (text == -1) then
+        local length = unicode.len(text)
+        if length + 2 > obj.width then obj.width = length + 2 end
+    end
     obj.height = obj.height + 1
     table.insert(obj.objs, {text, func, args})
 end
 
 function ui.contextMenu(x, y, bColor, tColor, shadow, args)
-    local newWidth = 1
+    local newWidth, newArgs = 1, args
     if args.width then newWidth = args.width end
+    newArgs.visible = false
     return checkProperties(x, y, newWidth, 0, {
-        bColor=bColor, tColor=tColor, shadow=shadow, args=args, objs={}, id=ui.ID.CONTEXT_MENU, show=doContextMenu, draw=drawContextMenu, addObj=addContextMenuObject
+        bColor=bColor, tColor=tColor, shadow=shadow, args=newArgs, objs={}, id=ui.ID.CONTEXT_MENU, show=doContextMenu, draw=drawContextMenu, addObj=addContextMenuObject
     })
 end
 
@@ -582,7 +607,6 @@ function ui.handleEvents(obj, args)
             local newClickedObj = clickedObj
             -- Checking scrollbar object
             if clickedObj.object then
-                local state = 1
                 if clickedObj.args.hideBar then state = 0 end
                 buffer.setDrawing(clickedObj.globalX, clickedObj.globalY, clickedObj.width - state, clickedObj.height)
                 if e[3] < clickedObj.globalX + clickedObj.width - state then
@@ -591,7 +615,8 @@ function ui.handleEvents(obj, args)
                 end
             end
             if e[1] == "touch" then
-                if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON or newClickedObj.id == ui.ID.IMAGED_BUTTON then newClickedObj:flash()
+                if e[5] == 0 and (newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON
+                or newClickedObj.id == ui.ID.IMAGED_BUTTON) then newClickedObj:flash()
                 elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write()
                 elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check()
                 elseif newClickedObj.id == ui.ID.CANVAS and newClickedObj.drawing then
@@ -619,7 +644,9 @@ function ui.handleEvents(obj, args)
                         clickedObj.scrollingY = e[4] - clickedObj.globalY - clickedObj.position + 2
                     end
                 end
-                if newClickedObj.touch then newClickedObj.touch(newClickedObj.args.touchArgs) end
+                if newClickedObj.touch then
+                    newClickedObj.touch(newClickedObj.args.touchArgs, e[3], e[4], e[5], e[6])
+                end
                 if ui.args.touch then ui.args.touch(newClickedObj, e[3], e[4], e[5], e[6]) end
             elseif e[1] == "drag" then
                 if clickedObj.id == ui.ID.SCROLLBAR then
