@@ -288,6 +288,10 @@ local function writeTextbox(obj)
             ui.draw(obj)
             if obj.enter then obj.enter(obj.text) end
             break
+        elseif e[1] == "clipboard" then
+            obj.text = obj.text .. e[3]
+            ui.draw(obj)
+            if obj.textChanged then obj.textChanged(obj.text) end
         elseif e[1] == "key_down" then
             if e[4] == 0x1C then -- ENTER
                 obj.args.active = false
