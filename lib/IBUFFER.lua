@@ -180,7 +180,7 @@ function buffer.draw()
             table.insert(compared.data, -1)
             table.insert(compared.data, -1)
             table.insert(compared.data, -1)
-        end 
+        end
     end
     compared:draw(1, 1)
     compared = nil

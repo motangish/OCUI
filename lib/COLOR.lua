@@ -22,16 +22,16 @@ color.palette = {
 }
 
 function color.invert(colorToInvert, bit8)
-    if bit8 then 
+    if bit8 then
         return 0xFF - colorToInvert
-    else 
+    else
         return 0xFFFFFF - colorToInvert
     end
 end
 
 function color.HEXToRGB(HEXColor)
-    return bit32.rshift(HEXColor, 16), 
-        bit32.band(bit32.rshift(HEXColor, 8), 0xFF), 
+    return bit32.rshift(HEXColor, 16),
+        bit32.band(bit32.rshift(HEXColor, 8), 0xFF),
         bit32.band(HEXColor, 0xFF)
 end
 

@@ -267,7 +267,7 @@ local function drawStandartTextbox(obj)
     end
     local length = unicode.len(obj.text)
     if length < obj.width then
-        if length == 0 then 
+        if length == 0 then
             buffer.drawText(obj.globalX, obj.globalY, nil, tColor, obj.title)
         else
             buffer.drawText(obj.globalX, obj.globalY, nil, tColor, obj.text)
@@ -332,7 +332,7 @@ local function drawBeautifulTextbox(obj)
     end
     local length = unicode.len(obj.text)
     if length < obj.width - 2 then
-        if length == 0 then 
+        if length == 0 then
             buffer.drawText(obj.globalX + 1, obj.globalY + 1, nil, tColor, obj.title)
         else
             buffer.drawText(obj.globalX + 1, obj.globalY + 1, nil, tColor, obj.text)
@@ -587,15 +587,15 @@ function ui.handleEvents(obj, args)
                 end
             end
             if e[1] == "touch" then
-                if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON or newClickedObj.id == ui.ID.IMAGED_BUTTON then newClickedObj:flash() 
-                elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write() 
-                elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check() 
+                if newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON or newClickedObj.id == ui.ID.IMAGED_BUTTON then newClickedObj:flash()
+                elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write()
+                elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check()
                 elseif newClickedObj.id == ui.ID.CANVAS and newClickedObj.drawing then
                     local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
                     if newClickedObj.currSymbol == -1 then
                         newClickedObj.image:setPixel(x, y, -1, 0xFFFFFF)
-                        buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, nl, 0xFFFFFF)
-                        buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, nil, 0xFFFFFF)
+                        buffer.new:setPixel(e[3], e[4], "▒", newClickedObj.currTransColor, 0xFFFFFF)
+                        buffer.old:setPixel(e[3], e[4], "▒", newClickedObj.currTransColor, 0xFFFFFF)
                         local symbol, bColor, tColor = buffer.getPixel(e[3], e[4])
                         gpu.setBackground(bColor)
                         gpu.setForeground(tColor)
@@ -631,8 +631,8 @@ function ui.handleEvents(obj, args)
                     local x, y = e[3] - newClickedObj.globalX + 1, e[4] - newClickedObj.globalY + 1
                     if newClickedObj.currSymbol == -1 then
                         newClickedObj.image:setPixel(x, y, -1, 0xFFFFFF)
-                        buffer.new:setPixel(e[3], e[4], newClickedObj.currSymbol, nil, 0xFFFFFF)
-                        buffer.old:setPixel(e[3], e[4], newClickedObj.currSymbol, nil, 0xFFFFFF)
+                        buffer.new:setPixel(e[3], e[4], "▒", newClickedObj.currTransColor, 0xFFFFFF)
+                        buffer.old:setPixel(e[3], e[4], "▒", newClickedObj.currTransColor, 0xFFFFFF)
                         local symbol, bColor, tColor = buffer.getPixel(e[3], e[4])
                         gpu.setBackground(bColor)
                         gpu.setForeground(tColor)
