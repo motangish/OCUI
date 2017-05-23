@@ -1,9 +1,10 @@
 local comp = require("computer")
 local fs = require("filesystem")
+local unicode = require("unicode")
 local ui = require("UI")
 local image = require("IMAGE")
 
-local mainBox, upBar, downBar, shellButton, shellCM, deskCM, defaultItemCM
+local mainBox, upBar, downBar, shellButton, prevFolderButton, shellCM, deskCM, defaultItemCM, folderCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local deskItems, initialized = {}, false
@@ -11,7 +12,8 @@ local itemNum = 0
 local clickedItemText
 
 -- ICONS
-local fileIcon = image.load("/SHELL/ICONS/FILE.bpix")
+local fileIcon      = image.load("/SHELL/ICONS/FILE.bpix")
+local folderIcon    = image.load("/SHELL/ICONS/FOLDER.bpix")
 
 local function toggleShellButton()
     shellButton:flash()
@@ -24,6 +26,22 @@ end
 local function exitFunc()
     mainBox = nil
     ui.exit()
+end
+
+local function createFileFunc()
+    local mainWindow, fileTB, cancelButton, doneButton
+    local function done()
+        execute({1, fileTB.text}, 0, 0, 0)
+    end
+    mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать файл", true)
+    fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
+    cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
+    doneButton = ui.beautifulButton(27, 5, 13, 3, 0xDCDCDC, 0x006600, "Создать", done)
+    mainWindow:addObj(fileTB)
+    mainWindow:addObj(cancelButton)
+    mainWindow:addObj(doneButton)
+    ui.draw(mainWindow)
+    ui.checkingObject = mainWindow
 end
 
 local function deleteItemFunc()
@@ -41,6 +59,11 @@ local function deleteItemFunc()
     mainWindow:addObj(doneButton)
     ui.draw(mainWindow)
     ui.checkingObject = mainWindow
+end
+
+local function prevFolderFunc()
+    deskPath = fs.path(deskPath)
+    update()
 end
 
 local function addItem(name, type, icon, func, args)
@@ -75,7 +98,8 @@ local function reloadItems()
         local name = fs.name(fullPath)
         local format = ui.getFormatOfFile(fullPath)
         if fs.isDirectory(fullPath) then
-
+            local newName = unicode.sub(name, 1, -1)
+            addItem(newName, "Fold", folderIcon, execute, {2, newName})
         else
             addItem(name, "F", fileIcon, execute, {1, fileName})
         end
@@ -98,18 +122,22 @@ local function init()
     downBar = ui.box(1, height, width, 1, 0x969696)
     shellButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true})
     downBar:addObj(shellButton)
-    shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.1})
+    prevFolderButton = ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc)
+    downBar:addObj(prevFolderButton)
+    shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.3})
     shellCM:addObj("Выйти в SHELL", exitFunc)
     shellCM:addObj("Перезагрузить", comp.shutdown, true)
     shellCM:addObj("Выключить", comp.shutdown)
     downBar:addObj(shellCM)
-    deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.1})
-    deskCM:addObj("Создать файл", exitFunc)
+    deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
+    deskCM:addObj("Создать файл", createFileFunc)
     deskCM:addObj("Обновить", update)
     deskCM:addObj(-1)
     deskCM:addObj("Убрать обои", comp.shutdown)
-    defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.1})
+    defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
     defaultItemCM:addObj("Удалить", deleteItemFunc)
+    folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
+    folderCM:addObj("Удалить", deleteItemFunc)
     mainBox:addObj(upBar)
     mainBox:addObj(downBar)
     reloadItems()
@@ -127,16 +155,21 @@ function execute(args, x, y, button)
     if button == 0 then                 -- LEFT MOUSE BUTTON
         if args[1] == 1 then            -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
+        elseif args[1] == 2 then        -- FOLDER
+            deskPath = deskPath .. args[2] .. "/"
         end
         update()
     elseif button == 1 then             -- RIGHT MOUSE BUTTON
+        deskItems[args.clickedItem][2]:toggle()
+        clickedItemText = args[2]
         if args[1] == 1 then            -- DEFAULT FILE
-            clickedItemText = args[2]
-            deskItems[args.clickedItem][2]:toggle()
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
             defaultItemCM:show()
-            deskItems[args.clickedItem][2]:toggle()
+        elseif args[1] == 2 then
+            folderCM.globalX, folderCM.globalY = x, y
+            folderCM:show()
         end
+        deskItems[args.clickedItem][2]:toggle()
     end
 end
 
