@@ -13,6 +13,7 @@ local clickedItemText, copyText, copyState
 
 -- ICONS
 local fileIcon      = image.load("/SHELL/ICONS/FILE.bpix")
+local luaIcon       = image.load("/SHELL/ICONS/LUA.bpix")
 local folderIcon    = image.load("/SHELL/ICONS/FOLDER.bpix")
 
 local function toggleShellButton()
@@ -42,6 +43,11 @@ local function createFileFunc()
     mainWindow:addObj(doneButton)
     ui.draw(mainWindow)
     ui.checkingObject = mainWindow
+end
+
+local function editItemFunc()
+    os.execute("edit " .. ui.addQuotes(deskPath .. clickedItemText))
+    update()
 end
 
 local function copyItemFunc()
@@ -124,7 +130,11 @@ local function reloadItems()
             local newName = unicode.sub(name, 1, -1)
             addItem(newName, "Fold", folderIcon, execute, {2, newName})
         else
-            addItem(name, "F", fileIcon, execute, {1, fileName})
+            if format == ".lua" then
+                addItem(name, "L", luaIcon, execute, {3, fileName})
+            else
+                addItem(name, "F", fileIcon, execute, {1, fileName})
+            end
         end
     end
 end
@@ -161,6 +171,7 @@ local function init()
         deskCM:addObj("Вставить", pasteItemFunc)
     end
     defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
+    defaultItemCM:addObj("Редактировать", editItemFunc)
     defaultItemCM:addObj("Копировать", copyItemFunc)
     defaultItemCM:addObj("Переместить", moveItemFunc)
     defaultItemCM:addObj("Удалить", deleteItemFunc)
@@ -182,20 +193,22 @@ function update()
 end
 
 function execute(args, x, y, button)
-    if button == 0 then                 -- LEFT MOUSE BUTTON
+    if button == 0 or button == nil then                 -- LEFT MOUSE BUTTON
         if args[1] == 1 then            -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
         elseif args[1] == 2 then        -- FOLDER
             deskPath = deskPath .. args[2] .. "/"
+        elseif args[1] == 3 then        -- LUA
+            os.execute(deskPath .. args[2])
         end
         update()
-    elseif button == 1 then             -- RIGHT MOUSE BUTTON
+    elseif button == 1 then                     -- RIGHT MOUSE BUTTON
         deskItems[args.clickedItem][2]:toggle()
         clickedItemText = args[2]
-        if args[1] == 1 then            -- DEFAULT FILE
+        if args[1] == 1 or args[1] == 3 then    -- DEFAULT FILE
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
             defaultItemCM:show()
-        elseif args[1] == 2 then
+        elseif args[1] == 2 then                -- FOLDER
             folderCM.globalX, folderCM.globalY = x, y
             folderCM:show()
         end
