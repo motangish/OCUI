@@ -3,12 +3,14 @@ local fs = require("filesystem")
 local unicode = require("unicode")
 local ui = require("UI")
 local image = require("IMAGE")
+local config = require("CONFIG")
 
-local mainBox, upBar, downBar, shellButton, prevFolderButton, shellCM, deskCM, defaultItemCM, folderCM
+local mainBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local deskItems, initialized = {}, false
 local itemNum = 0
+local CFG = config.new("/SHELL/CONFIG.cfg")
 local clickedItemText, copyText, copyState
 
 -- ICONS
@@ -95,6 +97,11 @@ local function prevFolderFunc()
     update()
 end
 
+local function toFolder(path)
+    deskPath = path
+    update()
+end
+
 local function addItem(name, type, icon, func, args)
     if name and type and icon and func and args then
         itemNum = itemNum + 1
@@ -156,6 +163,10 @@ local function init()
     downBar:addObj(shellButton)
     prevFolderButton = ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc)
     downBar:addObj(prevFolderButton)
+    desktopButton = ui.standartButton(17, 1, nil, 1, 0xDCDCDC, 0, "DESKTOP", toFolder, {touchArgs="/SHELL/DESKTOP/"})
+    downBar:addObj(desktopButton)
+    settingsButton = ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsButton)
+    downBar:addObj(settingsButton)
     shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.3})
     shellCM:addObj("Выйти в SHELL", exitFunc)
     shellCM:addObj("Перезагрузить", comp.shutdown, true)
@@ -216,6 +227,11 @@ function execute(args, x, y, button)
     end
 end
 
+if not CFG.config then
+    CFG.config = {
+        backColor = 0xC3C3C3
+    }
+end
 fs.makeDirectory(deskPath)
 init()
 ui.draw(mainBox)
