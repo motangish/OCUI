@@ -8,7 +8,7 @@ local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local deskItems, initialized = {}, false
 local itemNum = 0
-local clickedItem
+local clickedItemText
 
 -- ICONS
 local fileIcon = image.load("/SHELL/ICONS/FILE.bpix")
@@ -26,8 +26,21 @@ local function exitFunc()
     ui.exit()
 end
 
-local function defaultItemClosing()
-
+local function deleteItemFunc()
+    local mainWindow, fileLabel, cancelButton, doneButton
+    local function done()
+        fs.remove(deskPath .. clickedItemText)
+        update()
+    end
+    mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить файл", true)
+    fileLabel = ui.label(3, 3, 0x660000, 0xDCDCDC, clickedItemText)
+    cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
+    doneButton = ui.beautifulButton(27, 5, 13, 3, 0xDCDCDC, 0x006600, "Удалить", done)
+    mainWindow:addObj(fileLabel)
+    mainWindow:addObj(cancelButton)
+    mainWindow:addObj(doneButton)
+    ui.draw(mainWindow)
+    ui.checkingObject = mainWindow
 end
 
 local function addItem(name, type, icon, func, args)
@@ -92,10 +105,10 @@ local function init()
     downBar:addObj(shellCM)
     deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.1})
     deskCM:addObj("Создать файл", exitFunc)
-    deskCM:addObj("Обновить", comp.shutdown)
+    deskCM:addObj("Обновить", update)
     deskCM:addObj(-1)
     deskCM:addObj("Убрать обои", comp.shutdown)
-    defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {closing=defaultItemClosing, alpha=0.1})
+    defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.1})
     defaultItemCM:addObj("Удалить", deleteItemFunc)
     mainBox:addObj(upBar)
     mainBox:addObj(downBar)
@@ -103,23 +116,28 @@ local function init()
     initialized = true
 end
 
+function update()
+    init()
+    ui.draw(mainBox)
+    ui.checkingObject = mainBox
+    ui.args = {touch=touch}
+end
+
 function execute(args, x, y, button)
     if button == 0 then                 -- LEFT MOUSE BUTTON
         if args[1] == 1 then            -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
         end
+        update()
     elseif button == 1 then             -- RIGHT MOUSE BUTTON
         if args[1] == 1 then            -- DEFAULT FILE
+            clickedItemText = args[2]
             deskItems[args.clickedItem][2]:toggle()
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
             defaultItemCM:show()
             deskItems[args.clickedItem][2]:toggle()
         end
     end
-    init()
-    ui.draw(mainBox)
-    ui.checkingObject = mainBox
-    ui.args = {touch=touch}
 end
 
 init()
