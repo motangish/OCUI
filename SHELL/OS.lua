@@ -9,7 +9,7 @@ local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local deskItems, initialized = {}, false
 local itemNum = 0
-local clickedItemText
+local clickedItemText, copyText, copyState
 
 -- ICONS
 local fileIcon      = image.load("/SHELL/ICONS/FILE.bpix")
@@ -24,7 +24,7 @@ local function shellFunc()
 end
 
 local function exitFunc()
-    mainBox = nil
+    mainBox, upBar, downBar, shellButton, prevFolderButton, shellCM, deskCM, defaultItemCM, folderCM = nil, nil, nil, nil, nil, nil, nil, nil, nil
     ui.exit()
 end
 
@@ -42,6 +42,29 @@ local function createFileFunc()
     mainWindow:addObj(doneButton)
     ui.draw(mainWindow)
     ui.checkingObject = mainWindow
+end
+
+local function copyItemFunc()
+    copyText = deskPath .. clickedItemText
+    copyState = "COPY"
+end
+
+local function moveItemFunc()
+    copyText = deskPath .. clickedItemText
+    copyState = "MOVE"
+end
+
+local function pasteItemFunc()
+    local fileName = fs.name(copyText)
+    if fs.exists(copyText) and not fs.exists(deskPath .. fileName) then
+        if copyState == "COPY" then
+            fs.copy(copyText, deskPath .. fileName)
+        elseif copyState == "MOVE" then
+            fs.rename(copyText, deskPath .. fileName)
+        end
+        copyText, copyState = nil, nil
+    end
+    update()
 end
 
 local function deleteItemFunc()
@@ -116,7 +139,6 @@ end
 local function init()
     itemNum = 0
     ui.initialize(not initialized)
-    fs.makeDirectory(deskPath)
     mainBox = ui.box(1, 1, width, height, 0xC3C3C3)
     upBar = ui.box(1, 1, width, 1, 0x969696)
     downBar = ui.box(1, height, width, 1, 0x969696)
@@ -134,9 +156,17 @@ local function init()
     deskCM:addObj("Обновить", update)
     deskCM:addObj(-1)
     deskCM:addObj("Убрать обои", comp.shutdown)
+    if copyText ~= nil then
+        deskCM:addObj(-1)
+        deskCM:addObj("Вставить", pasteItemFunc)
+    end
     defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
+    defaultItemCM:addObj("Копировать", copyItemFunc)
+    defaultItemCM:addObj("Переместить", moveItemFunc)
     defaultItemCM:addObj("Удалить", deleteItemFunc)
     folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
+    --folderCM:addObj("Копировать", copyItemFunc)
+    --folderCM:addObj("Переместить", moveItemFunc)
     folderCM:addObj("Удалить", deleteItemFunc)
     mainBox:addObj(upBar)
     mainBox:addObj(downBar)
@@ -173,6 +203,7 @@ function execute(args, x, y, button)
     end
 end
 
+fs.makeDirectory(deskPath)
 init()
 ui.draw(mainBox)
 ui.handleEvents(mainBox, {touch=touch})
