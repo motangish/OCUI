@@ -607,6 +607,7 @@ function ui.handleEvents(obj, args)
             local newClickedObj = clickedObj
             -- Checking scrollbar object
             if clickedObj.object then
+                local state = 1
                 if clickedObj.args.hideBar then state = 0 end
                 buffer.setDrawing(clickedObj.globalX, clickedObj.globalY, clickedObj.width - state, clickedObj.height)
                 if e[3] < clickedObj.globalX + clickedObj.width - state then
