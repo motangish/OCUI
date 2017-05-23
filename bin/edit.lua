@@ -688,3 +688,5 @@ end
 
 term.clear()
 term.setCursorBlink(false)
+
+-- CUSTOMIZED BY MOTANGISH
