@@ -37,6 +37,7 @@ function ui.exit(bColor, tColor)
     local width, height = gpu.getResolution()
     if not bColor then newBColor = 0x1C1C1C end
     if not tColor then newTColor = 0xFFFFFF end
+    buffer.exit()
     gpu.setBackground(newBColor)
     gpu.setForeground(newTColor)
     gpu.fill(1, 1, width, height, " ")

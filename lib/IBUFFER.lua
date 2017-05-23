@@ -16,8 +16,8 @@ function buffer.initialize(width, height, gpuFilling)
     buffer.height = newHeight
     buffer.dHeight = newHeight * 2
     buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = 1, 1, buffer.width, buffer.height
-    buffer.new = image.new("new", newWidth, newHeight)
-    buffer.old = image.new("old", newWidth, newHeight)
+    if not buffer.new then buffer.new = image.new("new", newWidth, newHeight) end
+    if not buffer.old then buffer.old = image.new("old", newWidth, newHeight) end
     buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
     buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
     if gpuFilling then
@@ -25,6 +25,10 @@ function buffer.initialize(width, height, gpuFilling)
         gpu.setForeground(0xFFFFFF)
         gpu.fill(1, 1, newWidth, newHeight, " ")
     end
+end
+
+function buffer.exit()
+    buffer.new, buffer.old = nil, nil
 end
 
 local function floor(number)
