@@ -6,15 +6,16 @@ config.__index = config
 
 function config.open(path)
     local f = io.open(path, "r")
+    local data
     if f then
-        local data = sr.unserialize(f:read("*a"))
+        data = sr.unserialize(f:read("*a"))
         f:close()
     end
     return data
 end
 
 function config.new(path)
-    local self = setmetatable({}, image)
+    local self = setmetatable({}, config)
     self.config = config.open(path)
     self.path = path
     return self

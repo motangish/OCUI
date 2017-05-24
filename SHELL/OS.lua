@@ -1,9 +1,11 @@
-local comp = require("computer")
-local fs = require("filesystem")
-local unicode = require("unicode")
-local ui = require("UI")
-local image = require("IMAGE")
-local config = require("CONFIG")
+local comp      = require("computer")
+local fs        = require("filesystem")
+local unicode   = require("unicode")
+local ui        = require("UI")
+local image     = require("IMAGE")
+local config    = require("CONFIG")
+local color     = require("COLOR")
+local system    = require("SYSTEM")
 
 local mainBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM
 local width, height = 160, 50
@@ -29,6 +31,35 @@ end
 local function exitFunc()
     mainBox, upBar, downBar, shellButton, prevFolderButton, shellCM, deskCM, defaultItemCM, folderCM = nil, nil, nil, nil, nil, nil, nil, nil, nil
     ui.exit()
+end
+
+local function settingsFunc()
+    local mainWindow, backLabel, imageTB, colorButton, pcancelButton, doneButton
+    local function done()
+        CFG.config.backColor = colorButton.bColor
+        CFG.config.backImage = imageTB.text
+        CFG:save()
+        initialized = false
+        update()
+    end
+    local function colorSelected(selectedColor)
+        colorButton.bColor = selectedColor
+        colorButton.tColor = color.invert(selectedColor)
+        ui.draw(colorButton)
+    end
+    mainWindow = ui.window(nil, nil, 40, 11, 0xDCDCDC, 0xCDCDCD, 0, "Настройки", true)
+    backLabel = ui.label(3, 3, nil, 0, "Фон")
+    imageTB = ui.beautifulTextbox(2, 4, 38, 0xC3C3C3, 0x1C1C1C, "Путь к изображению", nil)
+    colorButton = ui.standartButton(2, 7, 38, 2, CFG.config.backColor, 0, "", system.selectColor, {touchArgs=colorSelected})
+    cancelButton = ui.beautifulButton(2, 9, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
+    doneButton = ui.beautifulButton(27, 9, 13, 3, 0xDCDCDC, 0x006600, "Сохранить", done)
+    mainWindow:addObj(backLabel)
+    mainWindow:addObj(imageTB)
+    mainWindow:addObj(colorButton)
+    mainWindow:addObj(cancelButton)
+    mainWindow:addObj(doneButton)
+    ui.draw(mainWindow)
+    ui.checkingObject = mainWindow
 end
 
 local function createFileFunc(type)
@@ -201,7 +232,15 @@ end
 local function init()
     itemNum = 0
     ui.initialize(not initialized)
-    mainBox = ui.box(1, 1, width, height, 0xC3C3C3)
+    if initialized then
+        mainBox:cleanObjects()
+    else
+        if CFG.config.backImage ~= "" and fs.exists(CFG.config.backImage) then
+            mainBox = ui.image(1, 1, image.load(CFG.config.backImage))
+        else
+            mainBox = ui.box(1, 1, width, height, CFG.config.backColor)
+        end
+    end
     upBar = ui.box(1, 1, width, 1, 0x969696)
     downBar = ui.box(1, height, width, 1, 0x969696)
     shellButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true})
@@ -210,7 +249,7 @@ local function init()
     downBar:addObj(prevFolderButton)
     desktopButton = ui.standartButton(17, 1, nil, 1, 0xDCDCDC, 0, "DESKTOP", toFolder, {touchArgs="/SHELL/DESKTOP/"})
     downBar:addObj(desktopButton)
-    settingsButton = ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsButton)
+    settingsButton = ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsFunc)
     downBar:addObj(settingsButton)
     shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.3})
     shellCM:addObj("Выйти в SHELL", exitFunc)
@@ -275,11 +314,10 @@ function execute(args, x, y, button)
     end
 end
 
-if not CFG.config then
-    CFG.config = {
-        backColor = 0xC3C3C3
-    }
-end
+if CFG.config == nil then CFG.config = {} end
+if CFG.config.backColor == nil then CFG.config.backColor = 0xC3C3C3 end
+CFG:save()
+
 fs.makeDirectory(deskPath)
 init()
 ui.draw(mainBox)

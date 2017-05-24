@@ -97,6 +97,10 @@ local function removeObject(onObj, obj)
     onObj.objects[obj.index] = nil
 end
 
+local function cleanObjects(obj)
+    obj.objects = {}
+end
+
 local function checkProperties(x, y, width, height, props)
     local newProps = props
     newProps.x, newProps.y, newProps.globalX, newProps.globalY, newProps.width, newProps.height, newProps.objects = x, y, x, y, width, height, {}
@@ -120,7 +124,7 @@ end
 
 function ui.box(x, y, width, height, aColor, args)
     return checkProperties(x, y, width, height, {
-        color=aColor, args=args, id=ui.ID.BOX, draw=drawBox, addObj=addObject, removeObj=removeObject
+        color=aColor, args=args, id=ui.ID.BOX, draw=drawBox, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -143,7 +147,7 @@ function ui.window(x, y, width, height, bColor, barColor, tColor, title, shadow,
     local newX, newY = x, y
     if not x or not y then newX, newY = ui.centerSquare(width, height) end
     return checkProperties(newX, newY, width, height, {
-        bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject, removeObj=removeObject
+        bColor=bColor, barColor=barColor, tColor=tColor, title=title, shadow=shadow, args=args, id=ui.ID.WINDOW, draw=drawWindow, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -159,7 +163,7 @@ end
 
 function ui.label(x, y, bColor, tColor, text, args)
     return checkProperties(x, y, unicode.len(text), 1, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.LABEL, setText=setLabelText, draw=drawLabel, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.LABEL, setText=setLabelText, draw=drawLabel, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -209,7 +213,7 @@ function ui.standartButton(x, y, width, height, bColor, tColor, text, func, args
     local newWidth = width
     if not width then newWidth = unicode.len(text) + 2 end
     return checkProperties(x, y, newWidth, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, toggle=toggleButton, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.STANDART_BUTTON, draw=drawStandartButton, touch=func, flash=flashButton, toggle=toggleButton, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -248,7 +252,7 @@ end
 
 function ui.beautifulButton(x, y, width, height, bColor, tColor, text, func, args)
     return checkProperties(x, y, width, height, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, toggle=toggleButton, flash=flashButton, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, toggle=toggleButton, flash=flashButton, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -263,7 +267,7 @@ end
 
 function ui.imagedButton(x, y, data, func, args)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, args=args, id=ui.ID.IMAGED_BUTTON, draw=drawImagedButton, touch=func, flash=flashButton, toggle=toggleButton, addObj=addObject, removeObj=removeObject
+        image=data, args=args, id=ui.ID.IMAGED_BUTTON, draw=drawImagedButton, touch=func, flash=flashButton, toggle=toggleButton, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -332,7 +336,7 @@ function ui.standartTextbox(x, y, width, bColor, tColor, title, max, args)
     local newMax = max
     if not max then newMax = 1000 end
     return checkProperties(x, y, width, 1, {
-        bColor=bColor, tColor=tColor, text="", title=title, max=newMax, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text="", title=title, max=newMax, args=args, id=ui.ID.STANDART_TEXTBOX, draw=drawStandartTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -365,7 +369,7 @@ function ui.beautifulTextbox(x, y, width, bColor, tColor, title, max, args)
     local newMax = max
     if not max then newMax = 1000 end
     return checkProperties(x, y, width, 3, {
-        bColor=bColor, tColor=tColor, text="", title=title, max=newMax, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, text="", title=title, max=newMax, args=args, id=ui.ID.BEAUTIFUL_TEXTBOX, draw=drawBeautifulTextbox, write=writeTextbox, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -392,7 +396,7 @@ end
 
 function ui.standartCheckbox(x, y, bColor, tColor, args)
     return checkProperties(x, y, 1, 1, {
-        bColor=bColor, tColor=tColor, args=args, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject, removeObj=removeObject
+        bColor=bColor, tColor=tColor, args=args, id=ui.ID.STANDART_CHECKBOX, draw=drawStandartCheckbox, check=checkCheckbox, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -496,7 +500,7 @@ end
 
 function ui.listBox(x, y, width, height, bColor, tColor, shadow, args)
     return checkProperties(x, y, width, height, {
-        bColor=bColor, tColor=tColor, shadow=shadow, args=args, objs={}, id=ui.ID.LISTBOX, draw=drawListBox, addObj=addListBoxObject
+        bColor=bColor, tColor=tColor, shadow=shadow, args=args, objs={}, id=ui.ID.LISTBOX, draw=drawListBox, addObj=addListBoxObject, cleanObjects=cleanObjects
     })
 end
 
@@ -556,7 +560,7 @@ end
 
 function ui.image(x, y, data)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, id=ui.ID.IMAGE, draw=drawImage, addObj=addObject, removeObj=removeObject
+        image=data, id=ui.ID.IMAGE, draw=drawImage, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
@@ -567,7 +571,7 @@ end
 
 function ui.canvas(x, y, currBColor, currTColor, currSymbol, data)
     return checkProperties(x, y, data.width, data.height, {
-        image=data, currBColor=currBColor, currTColor=currTColor, currSymbol=currSymbol, drawing=true, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject, removeObj=removeObject
+        image=data, currBColor=currBColor, currTColor=currTColor, currSymbol=currSymbol, drawing=true, id=ui.ID.CANVAS, draw=drawCanvas, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
