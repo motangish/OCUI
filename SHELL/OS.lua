@@ -31,13 +31,23 @@ local function exitFunc()
     ui.exit()
 end
 
-local function createFileFunc()
+local function createFileFunc(type)
     local mainWindow, fileTB, cancelButton, doneButton
     local function done()
-        execute({1, fileTB.text}, 0, 0, 0)
+        if type == 0 then
+            execute({1, fileTB.text}, 0, 0, 0)
+        else
+            fs.makeDirectory(deskPath .. fileTB.text)
+            update()
+        end
     end
-    mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать файл", true)
-    fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
+    if type == 0 then
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать файл", true)
+        fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
+    else
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать папку", true)
+        fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название папки", nil)
+    end
     cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
     doneButton = ui.beautifulButton(27, 5, 13, 3, 0xDCDCDC, 0x006600, "Создать", done)
     mainWindow:addObj(fileTB)
@@ -49,13 +59,25 @@ end
 
 local function renameItemFunc()
     local mainWindow, fileTB, formatTB, dotLabel, cancelButton, doneButton
-    local format = string.sub(ui.getFormatOfFile(deskPath .. clickedItemText), 2, -1)
+    local format = ui.getFormatOfFile(deskPath .. clickedItemText)
+    if format ~= nil then
+        format = string.sub(format, 2, -1)
+    else format = "" end
     local function done()
-        fs.rename(deskPath .. clickedItemText, deskPath .. fileTB.text .. "." .. formatTB.text)
+        if formatTB.text == "" then
+            fs.rename(deskPath .. clickedItemText, deskPath .. fileTB.text)
+        else
+            fs.rename(deskPath .. clickedItemText, deskPath .. fileTB.text .. "." .. formatTB.text)
+        end
         update()
     end
-    mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать файл", true)
-    fileTB = ui.beautifulTextbox(2, 2, 29, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
+    if fs.isDirectory(deskPath .. clickedItemText) then
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Переименовать папку", true)
+        fileTB = ui.beautifulTextbox(2, 2, 29, 0xC3C3C3, 0x1C1C1C, "Введите название папки", nil)
+    else
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Переименовать файл", true)
+        fileTB = ui.beautifulTextbox(2, 2, 29, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
+    end
     formatTB = ui.beautifulTextbox(32, 2, 8, 0xC3C3C3, 0x1C1C1C, format, nil)
     formatTB.text = format
     dotLabel = ui.label(31, 3, nil, 0x1C1C1C, ".")
@@ -196,7 +218,8 @@ local function init()
     shellCM:addObj("Выключить", comp.shutdown)
     downBar:addObj(shellCM)
     deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
-    deskCM:addObj("Создать файл", createFileFunc)
+    deskCM:addObj("Создать файл", createFileFunc, 0)
+    deskCM:addObj("Создать папку", createFileFunc, 1)
     deskCM:addObj("Обновить", update)
     deskCM:addObj(-1)
     deskCM:addObj("Убрать обои", comp.shutdown)
@@ -213,6 +236,7 @@ local function init()
     folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
     --folderCM:addObj("Копировать", copyItemFunc)
     --folderCM:addObj("Переместить", moveItemFunc)
+    folderCM:addObj("Переименовать", renameItemFunc)
     folderCM:addObj("Удалить", deleteItemFunc)
     mainBox:addObj(upBar)
     mainBox:addObj(downBar)
