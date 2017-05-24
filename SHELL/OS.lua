@@ -47,6 +47,29 @@ local function createFileFunc()
     ui.checkingObject = mainWindow
 end
 
+local function renameItemFunc()
+    local mainWindow, fileTB, formatTB, dotLabel, cancelButton, doneButton
+    local format = string.sub(ui.getFormatOfFile(deskPath .. clickedItemText), 2, -1)
+    local function done()
+        fs.rename(deskPath .. clickedItemText, deskPath .. fileTB.text .. "." .. formatTB.text)
+        update()
+    end
+    mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать файл", true)
+    fileTB = ui.beautifulTextbox(2, 2, 29, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
+    formatTB = ui.beautifulTextbox(32, 2, 8, 0xC3C3C3, 0x1C1C1C, format, nil)
+    formatTB.text = format
+    dotLabel = ui.label(31, 3, nil, 0x1C1C1C, ".")
+    cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
+    doneButton = ui.beautifulButton(23, 5, 17, 3, 0xDCDCDC, 0x006600, "Переименовать", done)
+    mainWindow:addObj(fileTB)
+    mainWindow:addObj(formatTB)
+    mainWindow:addObj(dotLabel)
+    mainWindow:addObj(cancelButton)
+    mainWindow:addObj(doneButton)
+    ui.draw(mainWindow)
+    ui.checkingObject = mainWindow
+end
+
 local function editItemFunc()
     os.execute("edit " .. ui.addQuotes(deskPath .. clickedItemText))
     update()
@@ -185,6 +208,7 @@ local function init()
     defaultItemCM:addObj("Редактировать", editItemFunc)
     defaultItemCM:addObj("Копировать", copyItemFunc)
     defaultItemCM:addObj("Переместить", moveItemFunc)
+    defaultItemCM:addObj("Переименовать", renameItemFunc)
     defaultItemCM:addObj("Удалить", deleteItemFunc)
     folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
     --folderCM:addObj("Копировать", copyItemFunc)
@@ -204,7 +228,7 @@ function update()
 end
 
 function execute(args, x, y, button)
-    if button == 0 or button == nil then                 -- LEFT MOUSE BUTTON
+    if button == 0 or button == nil then        -- LEFT MOUSE BUTTON
         if args[1] == 1 then            -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
         elseif args[1] == 2 then        -- FOLDER
