@@ -26,7 +26,7 @@ function system.selectColor(selectedFunc)
     local function exitWindow()
         buffer.drawImage(colorWindow.globalX, colorWindow.globalY, oldImage)
         ui.checkingObject = checkingObject
-        ui.args = args
+        buffer.draw()
     end
     local function done()
         exitWindow()
@@ -52,6 +52,7 @@ function system.selectColor(selectedFunc)
         end
     end
     paletteImgEl = ui.image(1, 2, palette)
+    paletteImgEl.touch = colorTouch
     cExit = ui.beautifulButton(2, 34, 15, 3, 0xDCDCDC, 0x660000, "Назад", exitWindow)
     cDone = ui.beautifulButton(48, 34, 16, 3, 0xDCDCDC, 0x006600, "Готово", done)
     cTextbox = ui.beautifulTextbox(22, 34, 20, selectedColor, color.invert(selectedColor), "0x" .. string.format("%06X", selectedColor), 8, args)
@@ -60,9 +61,8 @@ function system.selectColor(selectedFunc)
     colorWindow:addObj(cExit)
     colorWindow:addObj(cDone)
     colorWindow:addObj(cTextbox)
-    ui.draw(colorWindow)
     ui.checkingObject = colorWindow
-    ui.args.touch = colorTouch
+    ui.draw(colorWindow)
 end
 
 return system

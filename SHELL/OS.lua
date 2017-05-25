@@ -10,7 +10,7 @@ local system    = require("SYSTEM")
 local mainBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
-local deskItems, initialized = {}, false
+local deskItems, initialized, changeBackground = {}, false, false
 local itemNum = 0
 local CFG = config.new("/SHELL/CONFIG.cfg")
 local clickedItemText, copyText, copyState
@@ -37,9 +37,9 @@ local function settingsFunc()
     local mainWindow, backLabel, imageTB, colorButton, pcancelButton, doneButton
     local function done()
         CFG.config.backColor = colorButton.bColor
-        CFG.config.backImage = imageTB.text
+        if imageTB.text ~= "" then CFG.config.backImage = imageTB.text end
         CFG:save()
-        initialized = false
+        changeBackground = true
         update()
     end
     local function colorSelected(selectedColor)
@@ -178,6 +178,13 @@ local function toFolder(path)
     update()
 end
 
+local function removeWallpaperFunc()
+    CFG.config.backImage = nil
+    CFG:save()
+    changeBackground = true
+    update()
+end
+
 local function addItem(name, type, icon, func, args)
     if name and type and icon and func and args then
         itemNum = itemNum + 1
@@ -234,12 +241,14 @@ local function init()
     ui.initialize(not initialized)
     if initialized then
         mainBox:cleanObjects()
-    else
-        if CFG.config.backImage ~= "" and fs.exists(CFG.config.backImage) then
+    end
+    if changeBackground or not initialized then
+        if CFG.config.backImage and CFG.config.backImage ~= "" and fs.exists(CFG.config.backImage) then
             mainBox = ui.image(1, 1, image.load(CFG.config.backImage))
         else
             mainBox = ui.box(1, 1, width, height, CFG.config.backColor)
         end
+        changeBackground = false
     end
     upBar = ui.box(1, 1, width, 1, 0x969696)
     downBar = ui.box(1, height, width, 1, 0x969696)
@@ -261,7 +270,7 @@ local function init()
     deskCM:addObj("Создать папку", createFileFunc, 1)
     deskCM:addObj("Обновить", update)
     deskCM:addObj(-1)
-    deskCM:addObj("Убрать обои", comp.shutdown)
+    deskCM:addObj("Убрать обои", removeWallpaperFunc)
     if copyText ~= nil then
         deskCM:addObj(-1)
         deskCM:addObj("Вставить", pasteItemFunc)
