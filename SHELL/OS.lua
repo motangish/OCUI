@@ -7,18 +7,19 @@ local config    = require("CONFIG")
 local color     = require("COLOR")
 local system    = require("SYSTEM")
 
-local mainBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM
+local mainBox, itemsBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
-local deskItems, initialized, changeBackground = {}, false, false
+local initialized, changeBackground = false, false
 local itemNum = 0
 local CFG = config.new("/SHELL/CONFIG.cfg")
-local clickedItemText, copyText, copyState
+local clickedItem, clickedItemText, copyText, copyState
 
 -- ICONS
 local fileIcon      = image.load("/SHELL/ICONS/FILE.bpix")
 local luaIcon       = image.load("/SHELL/ICONS/LUA.bpix")
 local folderIcon    = image.load("/SHELL/ICONS/FOLDER.bpix")
+local appIcon       = image.load("/SHELL/ICONS/APP.bpix")
 
 local function toggleShellButton()
     shellButton:flash()
@@ -29,7 +30,9 @@ local function shellFunc()
 end
 
 local function exitFunc()
-    mainBox, upBar, downBar, shellButton, prevFolderButton, shellCM, deskCM, defaultItemCM, folderCM = nil, nil, nil, nil, nil, nil, nil, nil, nil
+    mainBox, itemsBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+    fileIcon, luaIcon, folderIcon, appIcon = nil, nil, nil, nil
+    CFG = nil
     ui.exit()
 end
 
@@ -157,7 +160,11 @@ local function deleteItemFunc()
         fs.remove(deskPath .. clickedItemText)
         update()
     end
-    mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить файл", true)
+    if fs.isDirectory(deskPath .. clickedItemText) then
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить папку", true)
+    else
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить файл", true)
+    end
     fileLabel = ui.label(3, 3, 0x660000, 0xDCDCDC, clickedItemText)
     cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
     doneButton = ui.beautifulButton(27, 5, 13, 3, 0xDCDCDC, 0x006600, "Удалить", done)
@@ -200,25 +207,28 @@ local function addItem(name, type, icon, func, args)
                 x = 8 + (x - 1) * 17
             end
             local resizedText = ui.resizeText(name, 14)
-            table.insert(deskItems, {
-                ui.label(x+ui.centerText(resizedText, 14) - 2, y+6, nil, 0, resizedText),
-                ui.imagedButton(x, y, icon, func, {touchArgs=args}), type
-            })
-            deskItems[#deskItems][2].args.touchArgs.clickedItem = #deskItems
-            mainBox:addObj(deskItems[#deskItems][1])
-            mainBox:addObj(deskItems[#deskItems][2])
+            local newArgs = args
+            newArgs.num = itemNum
+            itemsBox:addObj(ui.label(x+ui.centerText(resizedText, 14) - 2, y+6, nil, 0, resizedText))
+            itemsBox:addObj(ui.imagedButton(x, y, icon, func, {touchArgs=newArgs}))
         end
     end
 end
 
 local function reloadItems()
+    itemsBox:cleanObjects()
     for fileName in fs.list(deskPath) do
         local fullPath = deskPath .. fileName
         local name = fs.name(fullPath)
         local format = ui.getFormatOfFile(fullPath)
         if fs.isDirectory(fullPath) then
-            local newName = unicode.sub(name, 1, -1)
-            addItem(newName, "Fold", folderIcon, execute, {2, newName})
+            if format == ".app" then
+                local newName = unicode.sub(name, 1, -5)
+                addItem(newName, "App", appIcon, execute, {2, newName})
+            else
+                local newName = unicode.sub(name, 1, -1)
+                addItem(newName, "Fold", folderIcon, execute, {2, newName})
+            end
         else
             if format == ".lua" then
                 addItem(name, "L", luaIcon, execute, {3, fileName})
@@ -230,7 +240,7 @@ local function reloadItems()
 end
 
 local function touch(obj, x, y, button)
-    if obj == mainBox and button == 1 then
+    if obj == itemsBox and button == 1 then
         deskCM.globalX, deskCM.globalY = x, y
         deskCM:show()
     end
@@ -239,33 +249,47 @@ end
 local function init()
     itemNum = 0
     ui.initialize(not initialized)
-    if initialized then
-        mainBox:cleanObjects()
-    end
     if changeBackground or not initialized then
         if CFG.config.backImage and CFG.config.backImage ~= "" and fs.exists(CFG.config.backImage) then
             mainBox = ui.image(1, 1, image.load(CFG.config.backImage))
         else
             mainBox = ui.box(1, 1, width, height, CFG.config.backColor)
         end
+    end
+    if not initialized or changeBackground then
+        itemsBox = ui.box(1, 2, width, height - 2, nil, {hideBox=true})
+        upBar = ui.box(1, 1, width, 1, 0x969696)
+        downBar = ui.box(1, height, width, 1, 0x969696)
+        shellButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true})
+        downBar:addObj(shellButton)
+        prevFolderButton = ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc)
+        downBar:addObj(prevFolderButton)
+        desktopButton = ui.standartButton(17, 1, nil, 1, 0xDCDCDC, 0, "DESKTOP", toFolder, {touchArgs="/SHELL/DESKTOP/"})
+        downBar:addObj(desktopButton)
+        settingsButton = ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsFunc)
+        downBar:addObj(settingsButton)
+        shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.4})
+        shellCM:addObj("Выйти в SHELL", exitFunc)
+        shellCM:addObj("Перезагрузить", comp.shutdown, true)
+        shellCM:addObj("Выключить", comp.shutdown)
+        downBar:addObj(shellCM)
+        defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4, closing=defaultItemCMClosing})
+        defaultItemCM:addObj("Редактировать", editItemFunc)
+        defaultItemCM:addObj("Копировать", copyItemFunc)
+        defaultItemCM:addObj("Переместить", moveItemFunc)
+        defaultItemCM:addObj("Переименовать", renameItemFunc)
+        defaultItemCM:addObj("Удалить", deleteItemFunc)
+        folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
+        --folderCM:addObj("Копировать", copyItemFunc)
+        --folderCM:addObj("Переместить", moveItemFunc)
+        folderCM:addObj("Переименовать", renameItemFunc)
+        folderCM:addObj("Удалить", deleteItemFunc)
+        mainBox:addObj(upBar)
+        mainBox:addObj(downBar)
+        mainBox:addObj(itemsBox)
         changeBackground = false
     end
-    upBar = ui.box(1, 1, width, 1, 0x969696)
-    downBar = ui.box(1, height, width, 1, 0x969696)
-    shellButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true})
-    downBar:addObj(shellButton)
-    prevFolderButton = ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc)
-    downBar:addObj(prevFolderButton)
-    desktopButton = ui.standartButton(17, 1, nil, 1, 0xDCDCDC, 0, "DESKTOP", toFolder, {touchArgs="/SHELL/DESKTOP/"})
-    downBar:addObj(desktopButton)
-    settingsButton = ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsFunc)
-    downBar:addObj(settingsButton)
-    shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.3})
-    shellCM:addObj("Выйти в SHELL", exitFunc)
-    shellCM:addObj("Перезагрузить", comp.shutdown, true)
-    shellCM:addObj("Выключить", comp.shutdown)
-    downBar:addObj(shellCM)
-    deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
+    deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
     deskCM:addObj("Создать файл", createFileFunc, 0)
     deskCM:addObj("Создать папку", createFileFunc, 1)
     deskCM:addObj("Обновить", update)
@@ -275,19 +299,6 @@ local function init()
         deskCM:addObj(-1)
         deskCM:addObj("Вставить", pasteItemFunc)
     end
-    defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
-    defaultItemCM:addObj("Редактировать", editItemFunc)
-    defaultItemCM:addObj("Копировать", copyItemFunc)
-    defaultItemCM:addObj("Переместить", moveItemFunc)
-    defaultItemCM:addObj("Переименовать", renameItemFunc)
-    defaultItemCM:addObj("Удалить", deleteItemFunc)
-    folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.3})
-    --folderCM:addObj("Копировать", copyItemFunc)
-    --folderCM:addObj("Переместить", moveItemFunc)
-    folderCM:addObj("Переименовать", renameItemFunc)
-    folderCM:addObj("Удалить", deleteItemFunc)
-    mainBox:addObj(upBar)
-    mainBox:addObj(downBar)
     reloadItems()
     initialized = true
 end
@@ -310,7 +321,7 @@ function execute(args, x, y, button)
         end
         update()
     elseif button == 1 then                     -- RIGHT MOUSE BUTTON
-        deskItems[args.clickedItem][2]:toggle()
+        itemsBox.objects[args.num * 2]:toggle()
         clickedItemText = args[2]
         if args[1] == 1 or args[1] == 3 then    -- DEFAULT FILE
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
@@ -319,7 +330,7 @@ function execute(args, x, y, button)
             folderCM.globalX, folderCM.globalY = x, y
             folderCM:show()
         end
-        deskItems[args.clickedItem][2]:toggle()
+        if itemsBox.objects[args.num * 2].args.active then itemsBox.objects[args.num * 2]:toggle() end
     end
 end
 
