@@ -340,14 +340,14 @@ function update()
 end
 
 function execute(args, x, y, button)
-    if button == 0 or button == nil then        -- LEFT MOUSE BUTTON
-        if args[1] == 1 then            -- DEFAULT FILE
+    if button == 0 or button == nil then                -- LEFT MOUSE BUTTON
+        if args[1] == 1 then                                    -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
-        elseif args[1] == 2 then        -- FOLDER
+        elseif args[1] == 2 then                                -- FOLDER
             deskPath = deskPath .. args[2] .. "/"
-        elseif args[1] == 3 then        -- LUA
+        elseif args[1] == 3 then                                -- LUA
             os.execute(ui.addQuotes(deskPath .. args[2]))
-        elseif args[1] == 4 then        -- APPLICATION
+        elseif args[1] == 4 then                                -- APPLICATION
             if fs.exists(deskPath .. args[2] .. ".app/program.lua") then
                 os.execute(ui.addQuotes(deskPath .. args[2] .. ".app/program.lua"))
             end
@@ -355,16 +355,16 @@ function execute(args, x, y, button)
             os.execute("/SHELL/BIN/PIXELCREATOR.lua " .. ui.addQuotes(deskPath .. args[2]))
         end
         update()
-    elseif button == 1 then                     -- RIGHT MOUSE BUTTON
+    elseif button == 1 then                             -- RIGHT MOUSE BUTTON
         itemsBox.objects[args.num * 2]:toggle()
         clickedItemText = args[2]
         if args[1] == 1 or args[1] == 3 or args[1] == 5 then    -- DEFAULT,LUA,IMAGE FILE
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
             defaultItemCM:show()
-        elseif args[1] == 2 then                -- FOLDER
+        elseif args[1] == 2 then                                -- FOLDER
             folderCM.globalX, folderCM.globalY = x, y
             folderCM:show()
-        elseif args[1] == 4 then                -- APPLICATION
+        elseif args[1] == 4 then                                -- APPLICATION
             appCM.globalX, appCM.globalY = x, y
             appCM:show()
         end
@@ -373,7 +373,7 @@ function execute(args, x, y, button)
 end
 
 if CFG.config == nil then CFG.config = {} end
-if CFG.config.backColor == nil then CFG.config.backColor = 0xC3C3C3 end
+if CFG.config.backColor == nil then CFG.config.backColor = 0x006D80 end
 CFG:save()
 
 fs.makeDirectory(deskPath)
