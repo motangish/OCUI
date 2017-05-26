@@ -346,7 +346,7 @@ function execute(args, x, y, button)
         elseif args[1] == 2 then                                -- FOLDER
             deskPath = deskPath .. args[2] .. "/"
         elseif args[1] == 3 then                                -- LUA
-            os.execute(ui.addQuotes(deskPath .. args[2]))
+            system.execute(deskPath .. args[2], true)
         elseif args[1] == 4 then                                -- APPLICATION
             if fs.exists(deskPath .. args[2] .. ".app/program.lua") then
                 os.execute(ui.addQuotes(deskPath .. args[2] .. ".app/program.lua"))
