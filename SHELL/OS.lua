@@ -7,7 +7,7 @@ local config    = require("CONFIG")
 local color     = require("COLOR")
 local system    = require("SYSTEM")
 
-local mainBox, itemsBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM
+local mainBox, itemsBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local initialized, changeBackground = false, false
@@ -18,6 +18,7 @@ local clickedItem, clickedItemText, copyText, copyState
 -- ICONS
 local fileIcon      = image.load("/SHELL/ICONS/FILE.bpix")
 local luaIcon       = image.load("/SHELL/ICONS/LUA.bpix")
+local imageIcon     = image.load("/SHELL/ICONS/IMAGE.bpix")
 local folderIcon    = image.load("/SHELL/ICONS/FOLDER.bpix")
 local appIcon       = image.load("/SHELL/ICONS/APP.bpix")
 
@@ -70,17 +71,26 @@ local function createFileFunc(type)
     local function done()
         if type == 0 then
             execute({1, fileTB.text}, 0, 0, 0)
-        else
+        elseif type == 1 then
             fs.makeDirectory(deskPath .. fileTB.text)
+            update()
+        elseif type == 2 then
+            deskPath = deskPath .. fileTB.text .. ".app/"
+            fs.makeDirectory(deskPath)
+            appIcon:save(deskPath .. "icon.bpix")
+            os.execute("edit " .. ui.addQuotes(deskPath .. "program.lua"))
             update()
         end
     end
     if type == 0 then
         mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать файл", true)
         fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название файла", nil)
-    else
+    elseif type == 1 then
         mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать папку", true)
         fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название папки", nil)
+    elseif type == 2 then
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Создать приложение", true)
+        fileTB = ui.beautifulTextbox(2, 2, 38, 0xC3C3C3, 0x1C1C1C, "Введите название приложения", nil)
     end
     cancelButton = ui.beautifulButton(2, 5, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
     doneButton = ui.beautifulButton(27, 5, 13, 3, 0xDCDCDC, 0x006600, "Создать", done)
@@ -154,13 +164,19 @@ local function pasteItemFunc()
     update()
 end
 
-local function deleteItemFunc()
+local function deleteItemFunc(type)
     local mainWindow, fileLabel, cancelButton, doneButton
     local function done()
-        fs.remove(deskPath .. clickedItemText)
+        if type == 1 then
+            fs.remove(deskPath .. clickedItemText .. ".app")
+        else
+            fs.remove(deskPath .. clickedItemText)
+        end
         update()
     end
-    if fs.isDirectory(deskPath .. clickedItemText) then
+    if type == 1 then
+        mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить приложение", true)
+    elseif fs.isDirectory(deskPath .. clickedItemText) then
         mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить папку", true)
     else
         mainWindow = ui.window(nil, nil, 40, 7, 0xDCDCDC, 0xCDCDCD, 0, "Удалить файл", true)
@@ -183,6 +199,10 @@ end
 local function toFolder(path)
     deskPath = path
     update()
+end
+
+local function openAppFolderFunc()
+    toFolder(deskPath .. clickedItemText .. ".app/")
 end
 
 local function removeWallpaperFunc()
@@ -224,7 +244,12 @@ local function reloadItems()
         if fs.isDirectory(fullPath) then
             if format == ".app" then
                 local newName = unicode.sub(name, 1, -5)
-                addItem(newName, "App", appIcon, execute, {2, newName})
+                local iconPath = fullPath .. "icon.bpix"
+                if fs.exists(iconPath) then
+                    addItem(newName, "App", image.load(iconPath), execute, {4, newName})
+                else
+                    addItem(newName, "App", appIcon, execute, {4, newName})
+                end
             else
                 local newName = unicode.sub(name, 1, -1)
                 addItem(newName, "Fold", folderIcon, execute, {2, newName})
@@ -232,6 +257,8 @@ local function reloadItems()
         else
             if format == ".lua" then
                 addItem(name, "L", luaIcon, execute, {3, fileName})
+            elseif format == ".bpix" then
+                addItem(name, "I", imageIcon, execute, {5, fileName})
             else
                 addItem(name, "F", fileIcon, execute, {1, fileName})
             end
@@ -273,17 +300,18 @@ local function init()
         shellCM:addObj("Перезагрузить", comp.shutdown, true)
         shellCM:addObj("Выключить", comp.shutdown)
         downBar:addObj(shellCM)
-        defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4, closing=defaultItemCMClosing})
+        defaultItemCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
         defaultItemCM:addObj("Редактировать", editItemFunc)
         defaultItemCM:addObj("Копировать", copyItemFunc)
         defaultItemCM:addObj("Переместить", moveItemFunc)
         defaultItemCM:addObj("Переименовать", renameItemFunc)
         defaultItemCM:addObj("Удалить", deleteItemFunc)
         folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
-        --folderCM:addObj("Копировать", copyItemFunc)
-        --folderCM:addObj("Переместить", moveItemFunc)
         folderCM:addObj("Переименовать", renameItemFunc)
         folderCM:addObj("Удалить", deleteItemFunc)
+        appCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.5})
+        appCM:addObj("Открыть папку", openAppFolderFunc)
+        appCM:addObj("Удалить", deleteItemFunc, 1)
         mainBox:addObj(upBar)
         mainBox:addObj(downBar)
         mainBox:addObj(itemsBox)
@@ -292,6 +320,7 @@ local function init()
     deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
     deskCM:addObj("Создать файл", createFileFunc, 0)
     deskCM:addObj("Создать папку", createFileFunc, 1)
+    deskCM:addObj("Создать приложение", createFileFunc, 2)
     deskCM:addObj("Обновить", update)
     deskCM:addObj(-1)
     deskCM:addObj("Убрать обои", removeWallpaperFunc)
@@ -317,20 +346,29 @@ function execute(args, x, y, button)
         elseif args[1] == 2 then        -- FOLDER
             deskPath = deskPath .. args[2] .. "/"
         elseif args[1] == 3 then        -- LUA
-            os.execute(deskPath .. args[2])
+            os.execute(ui.addQuotes(deskPath .. args[2]))
+        elseif args[1] == 4 then        -- APPLICATION
+            if fs.exists(deskPath .. args[2] .. ".app/program.lua") then
+                os.execute(ui.addQuotes(deskPath .. args[2] .. ".app/program.lua"))
+            end
+        elseif args[1] == 5 then
+            os.execute("/SHELL/BIN/PIXELCREATOR.lua " .. ui.addQuotes(deskPath .. args[2]))
         end
         update()
     elseif button == 1 then                     -- RIGHT MOUSE BUTTON
         itemsBox.objects[args.num * 2]:toggle()
         clickedItemText = args[2]
-        if args[1] == 1 or args[1] == 3 then    -- DEFAULT FILE
+        if args[1] == 1 or args[1] == 3 or args[1] == 5 then    -- DEFAULT,LUA,IMAGE FILE
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
             defaultItemCM:show()
         elseif args[1] == 2 then                -- FOLDER
             folderCM.globalX, folderCM.globalY = x, y
             folderCM:show()
+        elseif args[1] == 4 then                -- APPLICATION
+            appCM.globalX, appCM.globalY = x, y
+            appCM:show()
         end
-        if itemsBox.objects[args.num * 2].args.active then itemsBox.objects[args.num * 2]:toggle() end
+        if itemsBox.objects[args.num * 2] and itemsBox.objects[args.num * 2].args.active then itemsBox.objects[args.num * 2]:toggle() end
     end
 end
 
