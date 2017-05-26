@@ -1,4 +1,5 @@
 local fs        = require("filesystem")
+local event     = require("event")
 local image     = require("IMAGE")
 local buffer    = require("IBUFFER")
 local color     = require("COLOR")
@@ -6,6 +7,10 @@ local ui        = require("UI")
 local gpu       = require("component").gpu
 
 local system = {}
+
+function system.initialize()
+    ui.initialize(false)
+end
 
 function system.selectColor(selectedFunc)
     local colorWindow = ui.window(nil, nil, 64, 36, 0xDCDCDC, 0xCDCDCD, 0, "Выберите цвет", true)
@@ -63,6 +68,42 @@ function system.selectColor(selectedFunc)
     colorWindow:addObj(cTextbox)
     ui.checkingObject = colorWindow
     ui.draw(colorWindow)
+end
+
+function system.error(message, disableExitButton)
+    local mainWindow, oldImage, cLabel, cExit, cDone
+    local checkingArgs, checkingObject = ui.args, ui.checkingObject
+    local function done()
+        buffer.drawImage(mainWindow.globalX, mainWindow.globalY, oldImage)
+        ui.checkingObject, ui.args = checkingObject, checkingArgs
+        buffer.draw()
+    end
+    local function exit()
+        done()
+        ui.exit()
+    end
+    mainWindow = ui.window(nil, nil, 128, 7, 0xDCDCDC, 0xCDCDCD, 0, "Произошла ошибка!", true)
+    oldImage = buffer.crop(mainWindow.globalX, mainWindow.globalY, mainWindow.width + 1, mainWindow.height + 1)
+    cLabel = ui.label(3, 3, nil, 0x660000, message)
+    if not disableExitButton then
+        cExit = ui.beautifulButton(2, 5, 15, 3, 0xDCDCDC, 0x660000, "Выход", exit)
+        mainWindow:addObj(cExit)
+    end
+    cDone = ui.beautifulButton(112, 5, 16, 3, 0xDCDCDC, 0x006600, "Продолжить", done)
+    mainWindow:addObj(cLabel)
+    mainWindow:addObj(cDone)
+    ui.draw(mainWindow)
+    ui.handleEvents(mainWindow)
+end
+
+function system.execute(path, disableExitButton)
+    local success, reason = loadfile(path)
+    if success then
+        local result = table.pack(pcall(success))
+        if result[1] then
+            return table.unpack(result, 2, result.n)
+        else system.error(result[2], disableExitButton) end
+    else system.error(reason, disableExitButton) end
 end
 
 return system
