@@ -113,12 +113,14 @@ end
 
 --  BOX  -------------------------------------------------------------------------------------------------
 local function drawBox(obj)
+    if not obj.args.hideBox then
     local symbol = " "
     if obj.args.symbol then symbol = obj.args.symbol end
-    if obj.args.alpha then
-        buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, obj.color, obj.args.alpha, obj.args.dPixel)
-    else
-        buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, obj.color, nil, obj.args.dPixel)
+        if obj.args.alpha then
+            buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, obj.color, obj.args.alpha, obj.args.dPixel)
+        else
+            buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, obj.color, nil, obj.args.dPixel)
+        end
     end
 end
 
@@ -411,7 +413,7 @@ local function drawContextMenu(obj)
                 buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, " ", obj.bColor)
             end
             if obj.objs[i][1] == -1 then
-                buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, "─", nil, nil)
+                buffer.fill(obj.globalX, obj.globalY + i - 1, obj.width, 1, "─", nil, color.invert(obj.bColor))
             else
                 buffer.drawText(obj.globalX + 1, obj.globalY + i - 1, nil, obj.tColor, obj.objs[i][1])
             end
