@@ -1,0 +1,1 @@
+os.execute("/SHELL/BIN/PIXELCREATOR.lua")
