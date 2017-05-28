@@ -469,12 +469,16 @@ local function addContextMenuObject(obj, text, func, args)
     table.insert(obj.objs, {text, func, args})
 end
 
+local function removeContextMenuObject(obj, num)
+    obj.objs[num] = nil
+end
+
 function ui.contextMenu(x, y, bColor, tColor, shadow, args)
     local newWidth, newArgs = 1, args
     if args.width then newWidth = args.width end
     newArgs.visible = false
     return checkProperties(x, y, newWidth, 0, {
-        bColor=bColor, tColor=tColor, shadow=shadow, args=newArgs, objs={}, id=ui.ID.CONTEXT_MENU, show=doContextMenu, draw=drawContextMenu, addObj=addContextMenuObject
+        bColor=bColor, tColor=tColor, shadow=shadow, args=newArgs, objs={}, id=ui.ID.CONTEXT_MENU, show=doContextMenu, draw=drawContextMenu, addObj=addContextMenuObject, removeObj=removeContextMenuObject
     })
 end
 
