@@ -23,7 +23,7 @@ local function download(path, localPath)
 end
 
 local function printPercent()
-    progressBar:setProgress(math.floor((100 / filesCount) * filesDownloaded))
+    progressBar:setProgress(filesDownloaded)
 end
 
 local function init()
