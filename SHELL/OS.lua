@@ -8,11 +8,12 @@ local color     = require("COLOR")
 local system    = require("SYSTEM")
 local comp      = require("computer")
 
-local mainBox, itemsBox, upBar, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
+local mainBox, itemsBox, upBar, searchTB, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local initialized, changeBackground = false, false
 local itemNum = 0
+local searchText = ""
 local CFG = config.new("/SHELL/CONFIG.cfg")
 local clickedItem, clickedItemText, copyText, copyState
 
@@ -247,32 +248,39 @@ local function addItem(name, type, icon, func, args)
     end
 end
 
+local function searchEnter(text)
+    searchText = text
+    update()
+end
+
 local function reloadItems()
     itemsBox:cleanObjects()
     for fileName in fs.list(deskPath) do
-        local fullPath = deskPath .. fileName
-        local name = fs.name(fullPath)
-        local format = ui.getFormatOfFile(fullPath)
-        if fs.isDirectory(fullPath) then
-            if format == ".app" then
-                local newName = unicode.sub(name, 1, -5)
-                local iconPath = fullPath .. "icon.bpix"
-                if fs.exists(iconPath) then
-                    addItem(newName, "App", image.load(iconPath), execute, {4, newName})
+        if (searchText ~= "" and string.find(fileName, searchText)) or (searchText == "") then
+            local fullPath = deskPath .. fileName
+            local name = fs.name(fullPath)
+            local format = ui.getFormatOfFile(fullPath)
+            if fs.isDirectory(fullPath) then
+                if format == ".app" then
+                    local newName = unicode.sub(name, 1, -5)
+                    local iconPath = fullPath .. "icon.bpix"
+                    if fs.exists(iconPath) then
+                        addItem(newName, "App", image.load(iconPath), execute, {4, newName})
+                    else
+                        addItem(newName, "App", appIcon, execute, {4, newName})
+                    end
                 else
-                    addItem(newName, "App", appIcon, execute, {4, newName})
+                    local newName = unicode.sub(name, 1, -1)
+                    addItem(newName, "Fold", folderIcon, execute, {2, newName})
                 end
             else
-                local newName = unicode.sub(name, 1, -1)
-                addItem(newName, "Fold", folderIcon, execute, {2, newName})
-            end
-        else
-            if format == ".lua" then
-                addItem(name, "L", luaIcon, execute, {3, fileName})
-            elseif format == ".bpix" then
-                addItem(name, "I", imageIcon, execute, {5, fileName})
-            else
-                addItem(name, "F", fileIcon, execute, {1, fileName})
+                if format == ".lua" then
+                    addItem(name, "L", luaIcon, execute, {3, fileName})
+                elseif format == ".bpix" then
+                    addItem(name, "I", imageIcon, execute, {5, fileName})
+                else
+                    addItem(name, "F", fileIcon, execute, {1, fileName})
+                end
             end
         end
     end
@@ -298,6 +306,9 @@ local function init()
     if not initialized or changeBackground then
         itemsBox = ui.box(1, 2, width, height - 2, nil, {hideBox=true})
         upBar = ui.box(1, 1, width, 1, 0x969696)
+        searchTB = ui.standartTextbox(3, 1, 30, 0x1C1C1C, 0xFFFFFF, "Поиск...", 100)
+        searchTB.enter = searchEnter
+        upBar:addObj(searchTB)
         downBar = ui.box(1, height, width, 1, 0x969696)
         downBar:addObj(ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true}))
         downBar:addObj(ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc))
@@ -317,7 +328,7 @@ local function init()
         folderCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
         folderCM:addObj("Переименовать", renameItemFunc)
         folderCM:addObj("Удалить", deleteItemFunc)
-        appCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.5})
+        appCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
         appCM:addObj("Открыть папку", openAppFolderFunc)
         appCM:addObj("Удалить", deleteItemFunc, 1)
         mainBox:addObj(upBar)
@@ -379,11 +390,7 @@ if CFG.config == nil then CFG.config = {} end
 if CFG.config.backColor == nil then CFG.config.backColor = 0x006D80 end
 CFG:save()
 
-print(comp.freeMemory() / 1024)
 fs.makeDirectory(deskPath)
 init()
-print(comp.freeMemory() / 1024)
 ui.draw(mainBox)
-print(comp.freeMemory() / 1024)
 ui.handleEvents(mainBox, {touch=touch})
-print(comp.freeMemory() / 1024)
