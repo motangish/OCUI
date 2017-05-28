@@ -10,7 +10,7 @@ local inet      = require("IINTERNET")
 local file      = require("FILE")
 local comp      = require("computer")
 
-_G._UIVERSION = 1
+_G._UIVERSION = 2
 
 local mainBox, itemsBox, upBar, searchTB, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
@@ -258,7 +258,7 @@ local function searchEnter(text)
 end
 
 local function updateSystem()
-    inet.download("", "/tmp/ui_installer.lua")
+    inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/ui_installer.lua", "/tmp/ui_installer.lua")
     system.execute("/tmp/ui_installer.lua", true)
 end
 
