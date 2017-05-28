@@ -11,20 +11,21 @@ local gpu = require("component").gpu
 local ui = {
     eventHandling=false,
     ID = {
-        BOX               = 1,
-        WINDOW            = 2,
-        LABEL             = 3,
-        STANDART_BUTTON   = 4,
-        BEAUTIFUL_BUTTON  = 5,
-        IMAGED_BUTTON     = 6,
-        STANDART_TEXTBOX  = 7,
-        BEAUTIFUL_TEXTBOX = 8,
-        STANDART_CHECKBOX = 9,
-        CONTEXT_MENU      = 10,
-        LISTBOX           = 11,
-        SCROLLBAR         = 12,
-        IMAGE             = 13,
-        CANVAS            = 14
+        BOX                  = 1,
+        WINDOW               = 2,
+        LABEL                = 3,
+        STANDART_BUTTON      = 4,
+        BEAUTIFUL_BUTTON     = 5,
+        IMAGED_BUTTON        = 6,
+        STANDART_TEXTBOX     = 7,
+        BEAUTIFUL_TEXTBOX    = 8,
+        STANDART_CHECKBOX    = 9,
+        CONTEXT_MENU         = 10,
+        LISTBOX              = 11,
+        SCROLLBAR            = 12,
+        STANDART_PROGRESSBAR = 13,
+        IMAGE                = 14,
+        CANVAS               = 15
     }
 }
 
@@ -556,6 +557,23 @@ end
 function ui.scrollbar(x, y, width, height, bColor, tColor, object, args)
     return checkProperties(x, y, width, height, {
         bColor=bColor, tColor=tColor, object=object, position=1, args=args, id=ui.ID.SCROLLBAR, scroll=scrollbarScroll, draw=drawScrollbar, addObj=addObject, removeObj=removeObject
+    })
+end
+
+--  PROGRESSBAR  -----------------------------------------------------------------------------------------
+local function drawStandartProgressBar(obj)
+    buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor, nil)
+    buffer.fill(obj.globalX, obj.globalY, math.floor((obj.width / obj.max) * obj.progress), obj.height, " ", obj.pColor, nil)
+end
+
+local function setPBProgress(obj, progress)
+    obj.progress = progress
+    ui.draw(obj)
+end
+
+function ui.standartProgressBar(x, y, width, height, bColor, pColor, max, progress, args)
+    return checkProperties(x, y, width, height, {
+        bColor=bColor, pColor=pColor, max=max, progress=progress, args=args, id=ui.ID.SCROLLBAR, setProgress=setPBProgress, draw=drawStandartProgressBar, addObj=addObject, removeObj=removeObject
     })
 end
 
