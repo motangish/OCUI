@@ -6,7 +6,11 @@ local image     = require("IMAGE")
 local config    = require("CONFIG")
 local color     = require("COLOR")
 local system    = require("SYSTEM")
+local inet      = require("IINTERNET")
+local file      = require("FILE")
 local comp      = require("computer")
+
+_G._UIVERSION = 1
 
 local mainBox, itemsBox, upBar, searchTB, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
@@ -15,7 +19,7 @@ local initialized, changeBackground = false, false
 local itemNum = 0
 local searchText = ""
 local CFG = config.new("/SHELL/CONFIG.cfg")
-local clickedItem, clickedItemText, copyText, copyState
+local clickedItem, clickedItemText, copyText, copyState, newUIVersion
 
 -- ICONS
 local fileIcon      = image.load("/SHELL/ICONS/FILE.bpix")
@@ -253,6 +257,11 @@ local function searchEnter(text)
     update()
 end
 
+local function updateSystem()
+    inet.download("", "/tmp/ui_installer.lua")
+    system.execute("/tmp/ui_installer.lua", true)
+end
+
 local function reloadItems()
     itemsBox:cleanObjects()
     for fileName in fs.list(deskPath) do
@@ -309,6 +318,9 @@ local function init()
         searchTB = ui.standartTextbox(3, 1, 30, 0x1C1C1C, 0xFFFFFF, "Поиск...", 100)
         searchTB.enter = searchEnter
         upBar:addObj(searchTB)
+        if _G._UIVERSION ~= newUIVersion then
+            upBar:addObj(ui.standartButton(width - 11, 1, nil, 1, 0x006600, 0xFFFFFF, "Обновить", updateSystem))
+        end
         downBar = ui.box(1, height, width, 1, 0x969696)
         downBar:addObj(ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true}))
         downBar:addObj(ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc))
@@ -390,6 +402,8 @@ if CFG.config == nil then CFG.config = {} end
 if CFG.config.backColor == nil then CFG.config.backColor = 0x006D80 end
 CFG:save()
 
+inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/version.cfg", "/tmp/version.cfg")
+newUIVersion = tonumber(file.open("/tmp/version.cfg"))
 fs.makeDirectory(deskPath)
 init()
 ui.draw(mainBox)
