@@ -6,8 +6,9 @@ local image     = require("IMAGE")
 local config    = require("CONFIG")
 local color     = require("COLOR")
 local system    = require("SYSTEM")
+local comp      = require("computer")
 
-local mainBox, itemsBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM, appCM
+local mainBox, itemsBox, upBar, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
 local deskPath = "/SHELL/DESKTOP/"
 local initialized, changeBackground = false, false
@@ -23,7 +24,7 @@ local folderIcon    = image.load("/SHELL/ICONS/FOLDER.bpix")
 local appIcon       = image.load("/SHELL/ICONS/APP.bpix")
 
 local function toggleShellButton()
-    shellButton:flash()
+    downBar.objects[1]:flash()
 end
 
 local function shellFunc()
@@ -31,7 +32,7 @@ local function shellFunc()
 end
 
 local function exitFunc()
-    mainBox, itemsBox, upBar, downBar, shellButton, prevFolderButton, desktopButton, settingsButton, shellCM, deskCM, defaultItemCM, folderCM = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+    mainBox, itemsBox, upBar, downBar, shellCM, deskCM, defaultItemCM, folderCM = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
     fileIcon, luaIcon, folderIcon, appIcon = nil, nil, nil, nil
     CFG = nil
     ui.exit()
@@ -141,16 +142,6 @@ local function editItemFunc()
     update()
 end
 
-local function copyItemFunc()
-    copyText = deskPath .. clickedItemText
-    copyState = "COPY"
-end
-
-local function moveItemFunc()
-    copyText = deskPath .. clickedItemText
-    copyState = "MOVE"
-end
-
 local function pasteItemFunc()
     local fileName = fs.name(copyText)
     if fs.exists(copyText) and not fs.exists(deskPath .. fileName) then
@@ -161,7 +152,28 @@ local function pasteItemFunc()
         end
         copyText, copyState = nil, nil
     end
+    deskCM:removeObj(#deskCM.objs - 1)
+    deskCM:removeObj(#deskCM.objs)
     update()
+end
+
+
+local function copyItemFunc()
+    if copyState == nil then
+        deskCM:addObj(-1)
+        deskCM:addObj("Вставить", pasteItemFunc)
+    end
+    copyText = deskPath .. clickedItemText
+    copyState = "COPY"
+end
+
+local function moveItemFunc()
+    if copyState == nil then
+        deskCM:addObj(-1)
+        deskCM:addObj("Вставить", pasteItemFunc)
+    end
+    copyText = deskPath .. clickedItemText
+    copyState = "MOVE"
 end
 
 local function deleteItemFunc(type)
@@ -287,14 +299,10 @@ local function init()
         itemsBox = ui.box(1, 2, width, height - 2, nil, {hideBox=true})
         upBar = ui.box(1, 1, width, 1, 0x969696)
         downBar = ui.box(1, height, width, 1, 0x969696)
-        shellButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true})
-        downBar:addObj(shellButton)
-        prevFolderButton = ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc)
-        downBar:addObj(prevFolderButton)
-        desktopButton = ui.standartButton(17, 1, nil, 1, 0xDCDCDC, 0, "DESKTOP", toFolder, {touchArgs="/SHELL/DESKTOP/"})
-        downBar:addObj(desktopButton)
-        settingsButton = ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsFunc)
-        downBar:addObj(settingsButton)
+        downBar:addObj(ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "SHELL", shellFunc, {toggling=true}))
+        downBar:addObj(ui.standartButton(12, 1, nil, 1, 0xDCDCDC, 0, "<─", prevFolderFunc))
+        downBar:addObj(ui.standartButton(17, 1, nil, 1, 0xDCDCDC, 0, "DESKTOP", toFolder, {touchArgs="/SHELL/DESKTOP/"}))
+        downBar:addObj(ui.standartButton(width - 12, 1, nil, 1, 0xDCDCDC, 0, "Настройки", settingsFunc))
         shellCM = ui.contextMenu(3, -2, 0xDCDCDC, 0, false, {closing=toggleShellButton, alpha=0.4})
         shellCM:addObj("Выйти в SHELL", exitFunc)
         shellCM:addObj("Перезагрузить", comp.shutdown, true)
@@ -315,21 +323,16 @@ local function init()
         mainBox:addObj(upBar)
         mainBox:addObj(downBar)
         mainBox:addObj(itemsBox)
-        changeBackground = false
-    end
-    deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
-    deskCM:addObj("Создать файл", createFileFunc, 0)
-    deskCM:addObj("Создать папку", createFileFunc, 1)
-    deskCM:addObj("Создать приложение", createFileFunc, 2)
-    deskCM:addObj("Обновить", update)
-    deskCM:addObj(-1)
-    deskCM:addObj("Убрать обои", removeWallpaperFunc)
-    if copyText ~= nil then
+        deskCM = ui.contextMenu(1, 1, 0xDCDCDC, 0, true, {alpha=0.4})
+        deskCM:addObj("Создать файл", createFileFunc, 0)
+        deskCM:addObj("Создать папку", createFileFunc, 1)
+        deskCM:addObj("Создать приложение", createFileFunc, 2)
+        deskCM:addObj("Обновить", update)
         deskCM:addObj(-1)
-        deskCM:addObj("Вставить", pasteItemFunc)
+        deskCM:addObj("Убрать обои", removeWallpaperFunc)
     end
     reloadItems()
-    initialized = true
+    initialized, changeBackground = true, false
 end
 
 function update()
@@ -376,7 +379,11 @@ if CFG.config == nil then CFG.config = {} end
 if CFG.config.backColor == nil then CFG.config.backColor = 0x006D80 end
 CFG:save()
 
+print(comp.freeMemory() / 1024)
 fs.makeDirectory(deskPath)
 init()
+print(comp.freeMemory() / 1024)
 ui.draw(mainBox)
+print(comp.freeMemory() / 1024)
 ui.handleEvents(mainBox, {touch=touch})
+print(comp.freeMemory() / 1024)
