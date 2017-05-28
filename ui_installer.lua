@@ -1,5 +1,6 @@
 local sr   = require("serialization")
 local inet = require("internet")
+local fs   = require("filesystem")
 local comp = require("computer")
 local ui   = require("UI")
 
