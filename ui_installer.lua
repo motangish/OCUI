@@ -28,7 +28,7 @@ end
 
 local function init()
     mainWindow = ui.window(nil, nil, 60, 4, 0xC3C3C3, 0x006DBF, 0xFFFFFF, "Обновление системы", true)
-    progressBar = ui.standartProgressBar(3, 3, 56, 1, 0xA5A5A5, 0x1C1C1C, 10, 5)
+    progressBar = ui.standartProgressBar(3, 3, 56, 1, 0xA5A5A5, 0x1C1C1C, filesCount, 0)
     mainWindow:addObj(progressBar)
 end
 
