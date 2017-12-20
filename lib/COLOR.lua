@@ -42,10 +42,34 @@ if comp.getArchitecture and comp.getArchitecture() == "Lua 5.3" then
 			return (red // 1 << 16) | (green // 1 << 8) | blue // 1
 		end
 	]])()
+	color.to8Bit = load([[
+		return function(color24Bit)
+			local index = color24Bit / 65536
+			local grounded = index // 1
+			local floored
+			if (index - grounded >= 0.5)
+				floored = grounded + 1
+			else
+				floored = grounded
+			return floored
+		end
+	]])()
 else
 	color.RGBToHEX = load([[
 		return function(red, green, blue)
 			return bit32.bor(bit32.bor(bit32.lshift(red, 16), bit32.lshift(green, 8)), blue)
+		end
+	]])()
+	color.to8Bit = load([[
+		return function(color24Bit)
+			local index = color24Bit / 65536
+			local grounded = math.floor(index)
+			local floored
+			if (index - grounded >= 0.5)
+				floored = grounded + 1
+			else
+				floored = grounded
+			return floored
 		end
 	]])()
 end
@@ -65,26 +89,26 @@ function color.blend(color1, color2, alpha)
     )
 end
 
-function color.to8Bit(color24Bit)
-    local closestDelta = math.huge
-    local red, green, blue = color.HEXToRGB(color24Bit)
-    local closestIndex, delta, paletteRed, paletteGreen, paletteBlue, redVar, greenVar, blueVar
-    for i = 1, #color.palette do
-        if color == color.palette[i] then
-            return i - 1
-        else
-            paletteRed, paletteGreen, paletteBlue = color.HEXToRGB(color.palette[i])
-            redVar = paletteRed - red
-            greenVar = paletteGreen - green
-            blueVar = paletteBlue - blue
-            delta = redVar * redVar + greenVar * greenVar + blueVar * blueVar
-            if delta < closestDelta then
-                closestDelta, closestIndex = delta, i
-            end
-        end
-    end
-    return closestIndex - 1
-end
+--function color.to8Bit(color24Bit)
+--    local closestDelta = math.huge
+--    local red, green, blue = color.HEXToRGB(color24Bit)
+--    local closestIndex, delta, paletteRed, paletteGreen, paletteBlue, redVar, greenVar, blueVar
+--    for i = 1, #color.palette do
+--        if color == color.palette[i] then
+--            return i - 1
+--        else
+--            paletteRed, paletteGreen, paletteBlue = color.HEXToRGB(color.palette[i])
+--            redVar = paletteRed - red
+--            greenVar = paletteGreen - green
+--            blueVar = paletteBlue - blue
+--            delta = redVar * redVar + greenVar * greenVar + blueVar * blueVar
+--            if delta < closestDelta then
+--                closestDelta, closestIndex = delta, i
+--            end
+--        end
+--    end
+--    return closestIndex - 1
+--end
 
 function color.to24Bit(color8Bit)
     return color.palette[color8Bit + 1]
