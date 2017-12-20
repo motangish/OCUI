@@ -66,14 +66,15 @@ if comp.getArchitecture and comp.getArchitecture() == "Lua 5.3" then
 else
 	color.to8Bit = load([[
 		return function(color24Bit)
-			local index = color24Bit / 65536
-			local grounded = math.floor(index)
-			local floored
-			if (index - grounded >= 0.5)
-				floored = grounded + 1
-			else
-				floored = grounded
-			return floored
+			return 200
+			--local index = color24Bit / 65536
+			--local grounded = math.floor(index)
+			--local floored
+			--if (index - grounded >= 0.5)
+			--	floored = grounded + 1
+			--else
+			--	floored = grounded
+			--return floored
 		end
 	]])()
 end
