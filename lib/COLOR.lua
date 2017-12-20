@@ -42,6 +42,15 @@ if comp.getArchitecture and comp.getArchitecture() == "Lua 5.3" then
 			return (red // 1 << 16) | (green // 1 << 8) | blue // 1
 		end
 	]])()
+else
+	color.RGBToHEX = load([[
+		return function(red, green, blue)
+			return bit32.bor(bit32.bor(bit32.lshift(red, 16), bit32.lshift(green, 8)), blue)
+		end
+	]])()
+end
+
+if comp.getArchitecture and comp.getArchitecture() == "Lua 5.3" then
 	color.to8Bit = load([[
 		return function(color24Bit)
 			local index = color24Bit / 65536
@@ -55,11 +64,6 @@ if comp.getArchitecture and comp.getArchitecture() == "Lua 5.3" then
 		end
 	]])()
 else
-	color.RGBToHEX = load([[
-		return function(red, green, blue)
-			return bit32.bor(bit32.bor(bit32.lshift(red, 16), bit32.lshift(green, 8)), blue)
-		end
-	]])()
 	color.to8Bit = load([[
 		return function(color24Bit)
 			local index = color24Bit / 65536
