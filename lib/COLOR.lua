@@ -72,7 +72,7 @@ function color.to8Bit(color24Bit)
         if color24Bit == color.palette[index] then
             return index - 1
         else
-            paletteR, paletteG, paletteB = HEXToRGB(color.palette[index])
+            paletteR, paletteG, paletteB = color.HEXToRGB(color.palette[index])
             delta = (paletteR - r) ^ 2 + (paletteG - g) ^ 2 + (paletteB - b) ^ 2		
             if delta < closestDelta then
                 closestDelta, closestIndex = delta, index
