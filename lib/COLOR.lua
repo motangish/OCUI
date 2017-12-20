@@ -1,7 +1,7 @@
 local bit32 = require("bit32")
 local comp = require("computer")
 
-local color = {to8Bit}
+local color = {}
 
 color.palette = {
     0x000000, 0x000040, 0x000080, 0x0000BF, 0x0000FF, 0x002400, 0x002440, 0x002480, 0x0024BF, 0x0024FF, 0x004900, 0x004940, 0x004980, 0x0049BF, 0x0049FF, 0x006D00,
@@ -66,10 +66,10 @@ function color.blend(color1, color2, alpha)
 end
 
 function color.to8Bit(color24Bit)	
-    local closestDelta, r, g, b, closestIndex, delta, paletteR, paletteG, paletteB = math.huge, HEXToRGB(color24Bit)
+    local closestDelta, r, g, b, closestIndex, delta, paletteR, paletteG, paletteB = math.huge, color.HEXToRGB(color24Bit)
 
     for index = 1, #color.palette do
-        if color24Bit == openComputersPalette[index] then
+        if color24Bit == color.palette[index] then
             return index - 1
         else
             paletteR, paletteG, paletteB = HEXToRGB(color.palette[index])
