@@ -1,4 +1,5 @@
 local bit32 = require("bit32")
+local comp = require("computer")
 
 local color = {}
 
@@ -35,9 +36,23 @@ function color.HEXToRGB(HEXColor)
         bit32.band(HEXColor, 0xFF)
 end
 
-function color.RGBToHEX(red, green, blue)
-    return bit32.lshift(red - 0.5, 16) + bit32.lshift(green - 0.5, 8) + blue - 0.5
+if comp.getArchitecture and comp.getArchitecture() == "Lua 5.3" then
+	color.RGBToHEX = load([[
+		return function(red, green, blue)
+			return (red // 1 << 16) | (green // 1 << 8) | blue // 1
+		end
+	]])()
+else
+	color.RGBToHEX = load([[
+		return function(red, green, blue)
+			return bit32.bor(bit32.bor(bit32.lshift(red, 16), bit32.lshift(green, 8)), blue)
+		end
+	]])()
 end
+
+--function color.RGBToHEX(red, green, blue)
+--    return bit32.lshift(red - 0.5, 16) + bit32.lshift(green - 0.5, 8) + blue - 0.5
+--end
 
 function color.blend(color1, color2, alpha)
     local invertedAlpha = 1 - alpha
