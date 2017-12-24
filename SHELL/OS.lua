@@ -14,6 +14,7 @@ _G._UIVERSION = 2
 
 local mainBox, itemsBox, upBar, searchTB, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
+local binPath = "/SHELL/BIN/"
 local deskPath = "/SHELL/DESKTOP/"
 local initialized, changeBackground = false, false
 local itemNum = 0
@@ -84,8 +85,9 @@ local function createFileFunc(type)
             deskPath = deskPath .. fileTB.text .. ".app/"
             fs.makeDirectory(deskPath)
             appIcon:save(deskPath .. "icon.bpix")
+            fs.copy(binPath .. "SAMPLEAPP.lua", deskPath .. "program.lua")
             os.execute("edit " .. ui.addQuotes(deskPath .. "program.lua"))
-            update()
+            update(true)
         end
     end
     if type == 0 then
@@ -144,7 +146,7 @@ end
 
 local function editItemFunc()
     os.execute("edit " .. ui.addQuotes(deskPath .. clickedItemText))
-    update()
+    update(true)
 end
 
 local function pasteItemFunc()
@@ -303,10 +305,12 @@ local function touch(obj, x, y, button)
 end
 
 local function init()
+    local backImageExists = false
     itemNum = 0
     ui.initialize(not initialized)
     if changeBackground or not initialized then
         if CFG.config.backImage and CFG.config.backImage ~= "" and fs.exists(CFG.config.backImage) then
+            backImageExists = true
             mainBox = ui.image(1, 1, image.load(CFG.config.backImage))
         else
             mainBox = ui.box(1, 1, width, height, CFG.config.backColor)
@@ -350,37 +354,48 @@ local function init()
         deskCM:addObj("Создать файл", createFileFunc, 0)
         deskCM:addObj("Создать папку", createFileFunc, 1)
         deskCM:addObj("Создать приложение", createFileFunc, 2)
-        deskCM:addObj("Обновить", update)
-        deskCM:addObj(-1)
-        deskCM:addObj("Убрать обои", removeWallpaperFunc)
+        deskCM:addObj("Обновить", updateDesktop)
+        if backImageExists then
+            deskCM:addObj(-1)
+            deskCM:addObj("Убрать обои", removeWallpaperFunc)
+        end
     end
     reloadItems()
     initialized, changeBackground = true, false
 end
 
-function update()
+function update(drawAll)
     init()
-    ui.draw(mainBox)
+    ui.draw(mainBox, drawAll)
     ui.checkingObject = mainBox
     ui.args = {touch=touch}
 end
 
+function updateDesktop()
+  update(true)
+end
+
 function execute(args, x, y, button)
     if button == 0 or button == nil then                -- LEFT MOUSE BUTTON
+        local drawAll = false
         if args[1] == 1 then                                    -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
+            drawAll = true
         elseif args[1] == 2 then                                -- FOLDER
             deskPath = deskPath .. args[2] .. "/"
         elseif args[1] == 3 then                                -- LUA
             system.execute(deskPath .. args[2], true)
+            drawAll = true
         elseif args[1] == 4 then                                -- APPLICATION
             if fs.exists(deskPath .. args[2] .. ".app/program.lua") then
-                os.execute(ui.addQuotes(deskPath .. args[2] .. ".app/program.lua"))
+                system.execute(deskPath .. args[2] .. ".app/program.lua", true)
+                drawAll = true
             end
         elseif args[1] == 5 then
             os.execute("/SHELL/BIN/PIXELCREATOR.lua " .. ui.addQuotes(deskPath .. args[2]))
+            drawAll = true
         end
-        update()
+        update(drawAll)
     elseif button == 1 then                             -- RIGHT MOUSE BUTTON
         itemsBox.objects[args.num * 2]:toggle()
         clickedItemText = args[2]
@@ -406,5 +421,5 @@ inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/version.c
 newUIVersion = tonumber(file.open("/tmp/version.cfg"))
 fs.makeDirectory(deskPath)
 init()
-ui.draw(mainBox)
+ui.draw(mainBox, true)
 ui.handleEvents(mainBox, {touch=touch})
