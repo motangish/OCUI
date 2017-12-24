@@ -86,5 +86,8 @@ for i = 1, #data.apps do
     printPercent()
 end
 
+fs.makeDirectory("/home")
+fs.copy("/autorun.lua", "/home/OS.lua")
+
 os.sleep(1)
 comp.shutdown(1)
