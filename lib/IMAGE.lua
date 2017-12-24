@@ -368,9 +368,13 @@ end
 
 function image:to8Bit()
     if not self.bit8 then
-        for i = 1, #self.data, 3 do
-            self.data[i + 1] = color.to8Bit(self.data[i + 1])
-            self.data[i + 2] = color.to8Bit(self.data[i + 2])
+        for i = 2, #self.data, 3 do
+            if self.data[i] and self.data[i] ~= -1 then
+                self.data[i] = color.to8Bit(self.data[i])
+            end
+            if self.data[i + 1] and self.data[i + 1] ~= -1 then
+                self.data[i + 1] = color.to8Bit(self.data[i + 1])
+            end
         end
         self.bit8 = true
     end
@@ -378,9 +382,13 @@ end
 
 function image:to24Bit()
     if self.bit8 then
-        for i = 1, #self.data, 3 do
-            self.data[i + 1] = color.to24Bit(self.data[i + 1])
-            self.data[i + 2] = color.to24Bit(self.data[i + 2])
+        for i = 2, #self.data, 3 do
+            if self.data[i] and self.data[i] ~= -1 then
+                self.data[i] = color.to24Bit(self.data[i])
+            end
+            if self.data[i + 1] and self.data[i + 1] ~= -1 then
+                self.data[i + 1] = color.to24Bit(self.data[i + 1])
+            end
         end
         self.bit8 = false
     end

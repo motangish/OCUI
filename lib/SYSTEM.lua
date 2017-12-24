@@ -71,39 +71,50 @@ function system.selectColor(selectedFunc)
 end
 
 function system.error(message, disableExitButton)
-    local mainWindow, oldImage, cLabel, cExit, cDone
-    local checkingArgs, checkingObject = ui.args, ui.checkingObject
-    local function done()
-        buffer.drawImage(mainWindow.globalX, mainWindow.globalY, oldImage)
-        ui.checkingObject, ui.args = checkingObject, checkingArgs
-        buffer.draw()
+    if message then
+        local mainWindow, oldImage, cLabel, cExit, cDone
+        local checkingArgs, checkingObject = ui.args, ui.checkingObject
+        local function done()
+            buffer.drawImage(mainWindow.globalX, mainWindow.globalY, oldImage)
+            ui.checkingObject, ui.args = checkingObject, checkingArgs
+            buffer.draw()
+        end
+        local function exit()
+            done()
+        end
+        mainWindow = ui.window(nil, nil, 128, 7, 0xDCDCDC, 0xCDCDCD, 0, "Произошла ошибка!", true)
+        oldImage = buffer.crop(mainWindow.globalX, mainWindow.globalY, mainWindow.width + 1, mainWindow.height + 1)
+        cLabel = ui.label(3, 3, nil, 0x660000, message)
+        if not disableExitButton then
+            cExit = ui.beautifulButton(2, 5, 15, 3, 0xDCDCDC, 0x660000, "Выход", exit)
+            mainWindow:addObj(cExit)
+        end
+        cDone = ui.beautifulButton(112, 5, 16, 3, 0xDCDCDC, 0x006600, "Продолжить", done)
+        mainWindow:addObj(cLabel)
+        mainWindow:addObj(cDone)
+        ui.draw(mainWindow)
+        ui.handleEvents(mainWindow)
     end
-    local function exit()
-        done()
-        ui.exit()
-    end
-    mainWindow = ui.window(nil, nil, 128, 7, 0xDCDCDC, 0xCDCDCD, 0, "Произошла ошибка!", true)
-    oldImage = buffer.crop(mainWindow.globalX, mainWindow.globalY, mainWindow.width + 1, mainWindow.height + 1)
-    cLabel = ui.label(3, 3, nil, 0x660000, message)
-    if not disableExitButton then
-        cExit = ui.beautifulButton(2, 5, 15, 3, 0xDCDCDC, 0x660000, "Выход", exit)
-        mainWindow:addObj(cExit)
-    end
-    cDone = ui.beautifulButton(112, 5, 16, 3, 0xDCDCDC, 0x006600, "Продолжить", done)
-    mainWindow:addObj(cLabel)
-    mainWindow:addObj(cDone)
-    ui.draw(mainWindow)
-    ui.handleEvents(mainWindow)
 end
 
 function system.execute(path, disableExitButton)
     local success, reason = loadfile(path)
     if success then
-        local result = table.pack(pcall(success))
-        if result[1] then
-            return table.unpack(result, 2, result.n)
-        else system.error(result[2], disableExitButton) end
-    else system.error(reason, disableExitButton) end
+        local result, err = pcall(success)
+        if not result and type(err) == "string" then
+            system.error(err, disableExitButton)
+        end
+    else
+        system.error(reason, disableExitButton)
+    end
+end
+
+function system.print2DArray(arr)
+  for i = 1, #arr do
+      if arr[i] ~= nil then
+          print(arr[i])
+      end
+  end
 end
 
 return system

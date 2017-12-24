@@ -171,8 +171,10 @@ local function setLabelText(obj, text)
 end
 
 function ui.label(x, y, bColor, tColor, text, args)
-    return checkProperties(x, y, unicode.len(text), 1, {
-        bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.LABEL, setText=setLabelText, draw=drawLabel, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
+    local newText = text
+    if not text then newText = "" end
+    return checkProperties(x, y, unicode.len(newText), 1, {
+        bColor=bColor, tColor=tColor, text=newText, args=args, id=ui.ID.LABEL, setText=setLabelText, draw=drawLabel, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
 
