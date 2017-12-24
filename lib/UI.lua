@@ -33,17 +33,23 @@ function ui.initialize(gpuFilling)
     buffer.initialize(nil, nil, gpuFilling)
 end
 
-function ui.exit(bColor, tColor)
+function ui.exit(bColor, tColor, gpuFilling)
     local newBColor, newTColor = bColor, tColor
     local width, height = gpu.getResolution()
     if not bColor then newBColor = 0x1C1C1C end
     if not tColor then newTColor = 0xFFFFFF end
-    buffer.exit()
-    gpu.setBackground(newBColor)
-    gpu.setForeground(newTColor)
-    gpu.fill(1, 1, width, height, " ")
-    term.clear()
+    if not gpuFilling then
+      gpu.setBackground(newBColor)
+      gpu.setForeground(newTColor)
+      gpu.fill(1, 1, width, height, " ")
+      term.clear()
+    end
     os.exit()
+end
+
+function ui.shutdown()
+    buffer.shutdown()
+    ui.exit()
 end
 
 local function codeToSymbol(code)
@@ -254,7 +260,10 @@ local function drawBeautifulButton(obj)
 end
 
 function ui.beautifulButton(x, y, width, height, bColor, tColor, text, func, args)
-    return checkProperties(x, y, width, height, {
+    local newWidth, newHeight = width, height
+    if not width then newWidth = unicode.len(text) + 4 end
+    if not height then newHeight = 3 end
+    return checkProperties(x, y, newWidth, newHeight, {
         bColor=bColor, tColor=tColor, text=text, args=args, id=ui.ID.BEAUTIFUL_BUTTON, draw=drawBeautifulButton, touch=func, toggle=toggleButton, flash=flashButton, addObj=addObject, removeObj=removeObject, cleanObjects=cleanObjects
     })
 end
@@ -472,6 +481,7 @@ end
 
 local function removeContextMenuObject(obj, num)
     obj.objs[num] = nil
+    obj.height = obj.height - 1
 end
 
 function ui.contextMenu(x, y, bColor, tColor, shadow, args)
@@ -520,7 +530,7 @@ local function drawScrollbar(obj)
     local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
     if lineHeight < 1 then lineHeight = 1 end
     if lineHeight > obj.height then lineHeight = obj.height end
-    if not obj.args.hideBar then
+    if not obj.args.hideBar and lineHeight < obj.height then
         buffer.fill(obj.globalX + obj.width - 1, obj.globalY, 1, obj.height, " ", obj.bColor, nil)
         buffer.fill(obj.globalX + obj.width - 1, obj.globalY + obj.position - 1, 1, lineHeight, " ", obj.tColor, nil)
     end
@@ -617,9 +627,9 @@ function ui.drawObject(obj, x, y)
     end
 end
 
-function ui.draw(obj)
+function ui.draw(obj, drawAll)
     if obj then ui.drawObject(obj) end
-    buffer.draw()
+    buffer.draw(drawAll)
 end
 
 --  EVENT HANDLING  --------------------------------------------------------------------------------------

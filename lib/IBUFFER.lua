@@ -3,32 +3,51 @@ local color = require("COLOR")
 local unicode = require("unicode")
 local gpu = require("component").gpu
 
-local buffer = {}
+local buffer = {initialized=false}
 
 function buffer.initialize(width, height, gpuFilling)
-    local newWidth, newHeight
-    if width and height then
-        newWidth, newHeight = width, height
-    else
-        newWidth, newHeight = gpu.getResolution()
-    end
-    buffer.width = newWidth
-    buffer.height = newHeight
-    buffer.dHeight = newHeight * 2
-    buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = 1, 1, buffer.width, buffer.height
-    if not buffer.new then buffer.new = image.new("new", newWidth, newHeight) end
-    if not buffer.old then buffer.old = image.new("old", newWidth, newHeight) end
-    buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
-    buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
-    if gpuFilling then
-        gpu.setBackground(0x1C1C1C)
-        gpu.setForeground(0xFFFFFF)
-        gpu.fill(1, 1, newWidth, newHeight, " ")
+    if not buffer.initialized then
+        local newWidth, newHeight
+        if width and height then
+            newWidth, newHeight = width, height
+        else
+            newWidth, newHeight = gpu.getResolution()
+        end
+        buffer.width = newWidth
+        buffer.height = newHeight
+        buffer.dHeight = newHeight * 2
+        buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = 1, 1, buffer.width, buffer.height
+        if not buffer.new then buffer.new = image.new("new", newWidth, newHeight) end
+        if not buffer.old then buffer.old = image.new("old", newWidth, newHeight) end
+        local index, symbol, tColor, bColor
+        for h = 1, newHeight do
+            for w = 1, newWidth do
+                index = image.XYToIndex(w, h, newWidth)
+                symbol, tColor, bColor = gpu.get(w, h)
+                buffer.old.data[index]     = symbol
+                buffer.new.data[index]     = symbol
+                buffer.old.data[index + 1] = bColor
+                buffer.new.data[index + 1] = bColor              
+                buffer.old.data[index + 2] = tColor
+                buffer.new.data[index + 2] = tColor
+            end
+        end
+        --buffer.new:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
+        --buffer.old:fill(1, 1, newWidth, newHeight, " ", 0x1C1C1C, 0xFFFFFF)
+        --buffer.old = image.screenshot()
+        --if gpuFilling then
+        --    gpu.setBackground(0x1C1C1C)
+        --    gpu.setForeground(0xFFFFFF)
+        --    gpu.fill(1, 1, newWidth, newHeight, " ")
+        --end
+        buffer.initialized = true
     end
 end
 
-function buffer.exit()
-    buffer.new, buffer.old = nil, nil
+function buffer.shutdown()
+  buffer.initialized = false
+  buffer.old = nil
+  buffer.new = nil
 end
 
 local function floor(number)
@@ -48,15 +67,15 @@ function buffer.setDefaultDrawing()
     buffer.drawX, buffer.drawY, buffer.drawW, buffer.drawH = 1, 1, buffer.width, buffer.height
 end
 
-function buffer.setPixel(x, y, symbol, bColor, tColor, bit8)
+function buffer.setPixel(x, y, symbol, bColor, tColor)
     if checkPixel(x, y) and bColor ~= -1 then
-        buffer.new:setPixel(x, y, symbol, bColor, tColor, bit8)
+        buffer.new:setPixel(x, y, symbol, bColor, tColor)
     end
 end
 
 function buffer.setDPixel(x, y, color)
     if checkPixel(x, math.floor(y / 2)) then
-        buffer.new:setDPixel(x, y, color, bit8)
+        buffer.new:setDPixel(x, y, color)
     end
 end
 
@@ -64,22 +83,17 @@ function buffer.getPixel(x, y)
     return buffer.new:getPixel(x, y)
 end
 
-function buffer.fill(x, y, width, height, symbol, bColor, tColor, dPixel, bit8)
-    local bColor8Bit, tColor8Bit = bColor, tColor
-    if not bit8 then
-        if bColor then bColor8Bit = color.to8Bit(bColor) end
-        if tColor then tColor8Bit = color.to8Bit(tColor) end
-    end
+function buffer.fill(x, y, width, height, symbol, bColor, tColor, dPixel)
     local index
     for h = 1, height do
         for w = 1, width do
             if dPixel and checkPixel(x + w - 1, floor((y + h - 1) / 2)) then
-                buffer.new:setDPixel(x + w - 1, y + h - 1, bColor8Bit, true)
+                buffer.new:setDPixel(x + w - 1, y + h - 1, bColor)
             elseif checkPixel(x + w - 1, y + h - 1) then
                 index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)
                 if symbol then buffer.new.data[index] = symbol end
-                if bColor8Bit then buffer.new.data[index + 1] = bColor8Bit end
-                if tColor8Bit then buffer.new.data[index + 2] = tColor8Bit end
+                if bColor then buffer.new.data[index + 1] = bColor end
+                if tColor then buffer.new.data[index + 2] = tColor end
             end
         end
     end
@@ -98,61 +112,56 @@ function buffer.fillBlend(x, y, width, height, aColor, alpha, dPixel)
                     if subNum > 0.0 then
                         local oldS = buffer.new.data[index]
                         if buffer.new.data[index] == "▀" then
-                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+                            buffer.new.data[index + 2] = color.blend(buffer.new.data[index + 2], aColor, alpha)
                         elseif buffer.new.data[index] == "▄" then
-                            buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                            buffer.new.data[index + 1] = color.blend(buffer.new.data[index + 1], aColor, alpha)
                         else
                             buffer.new.data[index] = "▀"
-                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                            buffer.new.data[index + 2] = color.blend(buffer.new.data[index + 1], aColor, alpha)
                         end
                     else
                         local oldS = buffer.new.data[index]
                         if buffer.new.data[index] == "▀" then
-                            buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                            buffer.new.data[index + 1] = color.blend(buffer.new.data[index + 1], aColor, alpha)
                         elseif buffer.new.data[index] == "▄" then
-                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+                            buffer.new.data[index + 2] = color.blend(buffer.new.data[index + 2], aColor, alpha)
                         else
                             buffer.new.data[index] = "▄"
-                            buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
+                            buffer.new.data[index + 2] = color.blend(buffer.new.data[index + 1], aColor, alpha)
                         end
                     end
                 else
                     index = image.XYToIndex(x + w - 1, y + h - 1, buffer.new.width)
-                    buffer.new.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 1]), aColor, alpha))
-                    buffer.new.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(buffer.new.data[index + 2]), aColor, alpha))
+                    buffer.new.data[index + 1] = color.blend(buffer.new.data[index + 1], aColor, alpha)
+                    buffer.new.data[index + 2] = color.blend(buffer.new.data[index + 2], aColor, alpha)
                 end
             end
         end
     end
 end
 
-function buffer.drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel, bit8)
-    buffer.new:drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel, bit8)
+function buffer.drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel)
+    buffer.new:drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel)
 end
 
-function buffer.drawCircle(x, y, radius, aColor, dPixel, bit8)
-    buffer.new:drawCircle(x, y, radius, aColor, dPixel, bit8)
+function buffer.drawCircle(x, y, radius, aColor, dPixel)
+    buffer.new:drawCircle(x, y, radius, aColor, dPixel)
 end
 
-function buffer.drawEllipse(x, y, width, height, aColor, dPixel, bit8)
-    buffer.new:drawEllipse(x, y, width, height, aColor, dPixel, bit8)
+function buffer.drawEllipse(x, y, width, height, aColor, dPixel)
+    buffer.new:drawEllipse(x, y, width, height, aColor, dPixel)
 end
 
-function buffer.drawText(x, y, bColor, tColor, text, bit8)
+function buffer.drawText(x, y, bColor, tColor, text)
     if y <= buffer.height then
         local index
-        local newBColor, newTColor = bColor, tColor
-        if not bit8 then
-            if bColor and bColor ~= -1 then newBColor = color.to8Bit(bColor) end
-            if tColor then newTColor = color.to8Bit(tColor) end
-        end
         for i = 1, unicode.len(text) do
             index = image.XYToIndex(x + i - 1, y, buffer.new.width)
             if checkPixel(x + i - 1, y) then
-                if bColor and bColor ~= -1 then buffer.new.data[index + 1] = newBColor
+                if bColor and bColor ~= -1 then buffer.new.data[index + 1] = bColor
                 elseif buffer.new.data[index] == symbol then buffer.new.data[index + 1] = -1 end
                 buffer.new.data[index] = unicode.sub(text, i, i)
-                if tColor then buffer.new.data[index + 2] = newTColor end
+                if tColor then buffer.new.data[index + 2] = tColor end
             end
         end
     end
@@ -163,7 +172,7 @@ function buffer.drawImage(x, y, img)
         for bColor, data1 in pairs(img.data) do
             for tColor, data2 in pairs(data1) do
                 for i = 1, #data2, 3 do
-                    buffer.drawText(x + data2[i] - 1, y + data2[i + 1] - 1, bColor, tColor, data2[i + 2], true)
+                    buffer.drawText(x + data2[i] - 1, y + data2[i + 1] - 1, bColor, tColor, data2[i + 2])
                 end
             end
         end
@@ -183,26 +192,30 @@ function buffer.crop(x, y, width, height)
     end
 end
 
-function buffer.draw()
-    local compared = image.new("compared", buffer.old.width, buffer.old.height)
-    local iP1, iP2
-    for i = 1, #buffer.old.data, 3 do
-        iP1, iP2 = i + 1, i + 2
-        if buffer.old.data[i] ~= buffer.new.data[i] or buffer.old.data[iP1] ~= buffer.new.data[iP1] or buffer.old.data[iP2] ~= buffer.new.data[iP2] then
-            table.insert(compared.data, buffer.new.data[i])
-            table.insert(compared.data, buffer.new.data[iP1])
-            table.insert(compared.data, buffer.new.data[iP2])
-            buffer.old.data[i] = buffer.new.data[i]
-            buffer.old.data[iP1] = buffer.new.data[iP1]
-            buffer.old.data[iP2] = buffer.new.data[iP2]
-        else
-            table.insert(compared.data, -1)
-            table.insert(compared.data, -1)
-            table.insert(compared.data, -1)
+function buffer.draw(drawAll)
+    if drawAll then
+        buffer.new:draw(1, 1)
+    else
+        local compared = image.new("compared", buffer.old.width, buffer.old.height)
+        local iP1, iP2
+        for i = 1, #buffer.old.data, 3 do
+            iP1, iP2 = i + 1, i + 2
+            if buffer.old.data[i] ~= buffer.new.data[i] or buffer.old.data[iP1] ~= buffer.new.data[iP1] or buffer.old.data[iP2] ~= buffer.new.data[iP2] then
+                table.insert(compared.data, buffer.new.data[i])
+                table.insert(compared.data, buffer.new.data[iP1])
+                table.insert(compared.data, buffer.new.data[iP2])
+                buffer.old.data[i] = buffer.new.data[i]
+                buffer.old.data[iP1] = buffer.new.data[iP1]
+                buffer.old.data[iP2] = buffer.new.data[iP2]
+            else
+                table.insert(compared.data, -1)
+                table.insert(compared.data, -1)
+                table.insert(compared.data, -1)
+            end
         end
+        compared:draw(1, 1)
+        compared = nil
     end
-    compared:draw(1, 1)
-    compared = nil
 end
 
 buffer.initialize()

@@ -23,9 +23,11 @@ end
 
 function image.load(path)
     local file = io.open(path, "r")
-    local data = file:read("*a")
-    file:close()
-    return setmetatable(sr.unserialize(data), image)
+    local data = sr.unserialize(file:read("*a"))
+    file:close()   
+    data = setmetatable(data, image)
+    if data.bit8 then data:to24Bit() end
+    return data
 end
 
 function image.screenshot()
@@ -37,8 +39,8 @@ function image.screenshot()
             index = image.XYToIndex(w, h, width)
             local symbol, tColor, bColor = gpu.get(w, h)
             screenshot.data[index]     = symbol
-            screenshot.data[index + 1] = color.to8Bit(bColor)
-            screenshot.data[index + 2] = color.to8Bit(tColor)
+            screenshot.data[index + 1] = bColor
+            screenshot.data[index + 2] = tColor
         end
     end
     return screenshot
@@ -68,9 +70,11 @@ function image.invert(imageToInvert)
             if imageToInvert.data[index + 1] == -1 then
                 inverted.data[index + 1] = -1
             else
-                inverted.data[index + 1] = color.invert(imageToInvert.data[index + 1], true)
+                if imageToInvert.data[index + 1] then
+                    inverted.data[index + 1] = color.invert(imageToInvert.data[index + 1])
+                end
             end
-            inverted.data[index + 2] = color.invert(imageToInvert.data[index + 2], true)
+            inverted.data[index + 2] = color.invert(imageToInvert.data[index + 2])
         end
     end
     return inverted
@@ -79,16 +83,14 @@ end
 function image.replaceNullSymbols(imageToReplace, symbol, bColor, tColor)
     local replaced = image.new("replaced", imageToReplace.width, imageToReplace.height)
     local index, iP1, iP2
-    local bColor8Bit, tColor8Bit = bColor, color.to8Bit(tColor)
-    if bColor ~= -1 then bColor8Bit = color8Bit(bColor) end
     for h = 1, imageToReplace.height do
         for w = 1, imageToReplace.width do
             index = image.XYToIndex(w, h, imageToReplace.width)
             iP1, iP2 = index + 1, index + 2
             if imageToReplace.data[index] == -1 then
                 replaced.data[index] = symbol
-                replaced.data[iP1] = bColor8Bit
-                replaced.data[iP2] = tColor8Bit
+                replaced.data[iP1] = bColor
+                replaced.data[iP2] = tColor
             else
                 replaced.data[index] = imageToReplace.data[index]
                 replaced.data[iP1] = imageToReplace.data[iP1]
@@ -149,69 +151,57 @@ function image.new(name, width, height)
     return self
 end
 
-function image:setPixel(x, y, symbol, bColor, tColor, bit8)
+function image:setPixel(x, y, symbol, bColor, tColor)
     if x > 0 and x <= self.width and y > 0 and y <= self.height then
         local index = image.XYToIndex(x, y, self.width)
         if symbol then self.data[index] = symbol end
-        if bit8 then
-            if bColor then self.data[index + 1] = bColor end
-            if tColor then self.data[index + 2] = tColor end
-        else
-            if bColor then self.data[index + 1] = color.to8Bit(bColor) end
-            if tColor then self.data[index + 2] = color.to8Bit(tColor) end
-        end
+        if bColor then self.data[index + 1] = bColor end
+        if tColor then self.data[index + 2] = tColor end
     end
 end
 
-function image:setDPixel(x, y, aColor, bit8)
+function image:setDPixel(x, y, aColor)
     local index = image.XYToIndex(x, floor(y / 2), self.width)
     local num, subNum = math.modf(y / 2)
-    local color8Bit = aColor
-    if not bit8 then color8Bit = color.to8Bit(aColor) end
     if subNum > 0.0 then
         local oldS = self.data[index]
         if self.data[index] == "▀" then
-            self.data[index + 2] = color8Bit
+            self.data[index + 2] = aColor
         elseif self.data[index] == "▄" then
-            self.data[index + 1] = color8Bit
+            self.data[index + 1] = aColor
         else
             self.data[index] = "▀"
-            self.data[index + 2] = color8Bit
+            self.data[index + 2] = aColor
         end
     else
         local oldS = self.data[index]
         if self.data[index] == "▀" then
-            self.data[index + 1] = color8Bit
+            self.data[index + 1] = aColor
         elseif self.data[index] == "▄" then
-            self.data[index + 2] = color8Bit
+            self.data[index + 2] = aColor
         else
             self.data[index] = "▄"
-            self.data[index + 2] = color8Bit
+            self.data[index + 2] = aColor
         end
     end
 end
 
 function image:getPixel(x, y)
     local index = image.XYToIndex(x, y, self.width)
-    return self.data[index], color.to24Bit(self.data[index + 1]), color.to24Bit(self.data[index + 2])
+    return self.data[index], self.data[index + 1], self.data[index + 2]
 end
 
-function image:fill(x, y, width, height, symbol, bColor, tColor, dPixel, bit8)
-    local bColor8Bit, tColor8Bit = bColor, tColor
-    if not bit8 then
-        if bColor then bColor8Bit = color.to8Bit(bColor) end
-        if tColor then tColor8Bit = color.to8Bit(tColor) end
-    end
+function image:fill(x, y, width, height, symbol, bColor, tColor, dPixel)
     local index
     for h = 1, height do
         for w = 1, width do
             if dPixel then
-                self:setDPixel(x + w - 1, y + h - 1, bColor8Bit, true)
+                self:setDPixel(x + w - 1, y + h - 1, bColor)
             else
                 index = image.XYToIndex(x + w - 1, y + h - 1, self.width)
                 if symbol then self.data[index] = symbol end
-                if bColor8Bit then self.data[index + 1] = bColor8Bit end
-                if tColor8Bit then self.data[index + 2] = tColor8Bit end
+                if bColor then self.data[index + 1] = bColor end
+                if tColor then self.data[index + 2] = tColor end
             end
         end
     end
@@ -227,29 +217,23 @@ function image:fillBlend(x, y, width, height, aColor, alpha, dPixel)
                 local num, subNum = math.modf((y + h - 1) / 2)
                 self.data[index] = "▀"
                 if subNum > 0.0 then
-                    self.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))
+                    self.data[index + 2] = color.blend(self.data[index + 1], aColor, alpha)
                 else
                     if not self.data[index + 2] then
                         self.data[index + 2] = self.data[index + 1]
                     end
-                    self.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))
+                    self.data[index + 1] = color.blend(self.data[index + 1], aColor, alpha)
                 end
             else
-                self.data[index + 1] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 1]), aColor, alpha))
-                self.data[index + 2] = color.to8Bit(color.blend(color.to24Bit(self.data[index + 2]), aColor, alpha))
+                self.data[index + 1] = color.blend(self.data[index + 1], aColor, alpha)
+                self.data[index + 2] = color.blend(self.data[index + 2], aColor, alpha)
             end
         end
     end
 end
 
-function image:drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel, bit8)
+function image:drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel)
     local steep = false
-    local bColor8Bit = bColor
-    local tColor8Bit = tColor
-    if not bit8 then
-        bColor8Bit = color.to8Bit(bColor)
-        if not dPixel then tColor8Bit = color.to8Bit(tColor) end
-    end
     if math.abs(x1 - x2) < math.abs(y1 - y2) then
         x1, y1 = swap(x1, y1)
         x2, y2 = swap(x2, y2)
@@ -267,15 +251,15 @@ function image:drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel, bit8)
     for x = x1, x2, 1 do
         if steep then
             if dPixel then
-                self:setDPixel(y, x, bColor8Bit)
+                self:setDPixel(y, x, bColor)
             else
-                self:setPixel(y, x, symbol, bColor8Bit, tColor8Bit)
+                self:setPixel(y, x, symbol, bColor, tColor)
             end
         else
             if dPixel then
-                self:setDPixel(x, y, bColor8Bit)
+                self:setDPixel(x, y, bColor)
             else
-                self:setPixel(x, y, symbol, bColor, tColor8Bit)
+                self:setPixel(x, y, symbol, bColor, tColor)
             end
         end
         error2 = error2 + derror2
@@ -286,20 +270,18 @@ function image:drawLine(x1, y1, x2, y2, symbol, bColor, tColor, dPixel, bit8)
     end
 end
 
-function image:drawCircle(xC, yC, radius, aColor, dPixel, bit8)
-    local color8Bit = aColor
-    if not bit8 then color8Bit = color.to8Bit(aColor) end
+function image:drawCircle(xC, yC, radius, aColor, dPixel)
     local function setPixels(x, y)
         if dPixel then
-            self:setDPixel(xC + x, yC + y, color8Bit)
-            self:setDPixel(xC + x, yC - y, color8Bit)
-            self:setDPixel(xC - x, yC + y, color8Bit)
-            self:setDPixel(xC - x, yC - y, color8Bit)
+            self:setDPixel(xC + x, yC + y, aColor)
+            self:setDPixel(xC + x, yC - y, aColor)
+            self:setDPixel(xC - x, yC + y, aColor)
+            self:setDPixel(xC - x, yC - y, aColor)
         else
-            self:setPixel(xC + x, yC + y, " ", color8Bit)
-            self:setPixel(xC + x, yC - y, " ", color8Bit)
-            self:setPixel(xC - x, yC + y, " ", color8Bit)
-            self:setPixel(xC - x, yC - y, " ", color8Bit)
+            self:setPixel(xC + x, yC + y, " ", aColor)
+            self:setPixel(xC + x, yC - y, " ", aColor)
+            self:setPixel(xC - x, yC + y, " ", aColor)
+            self:setPixel(xC - x, yC - y, " ", aColor)
         end
     end
     local x, y = 0, radius
@@ -318,7 +300,7 @@ function image:drawCircle(xC, yC, radius, aColor, dPixel, bit8)
     if x == y then setPixels(x, y) end
 end
 
-function image:drawEllipse(nX, nY, nX2, nY2, aColor, dPixel, bit8)
+function image:drawEllipse(nX, nY, nX2, nY2, aColor, dPixel)
     local x, y, width, height = nX, nY, nX2 - nX, nY2 - nY
     if nX2 < nX then
         x = nX2
@@ -328,19 +310,17 @@ function image:drawEllipse(nX, nY, nX2, nY2, aColor, dPixel, bit8)
         y = nY2
         height = nY - nY2
     end
-    local color8Bit = aColor
-    if not bit8 then color8Bit = color.to8Bit(aColor) end
-    local function setPixels(centerX, centerY, deltaX, deltaY, color)
+    local function setPixels(centerX, centerY, deltaX, deltaY)
         if dPixel then
-            self:setDPixel(centerX + deltaX, centerY + deltaY, color8Bit, true)
-            self:setDPixel(centerX - deltaX, centerY + deltaY, color8Bit, true)
-            self:setDPixel(centerX + deltaX, centerY - deltaY, color8Bit, true)
-            self:setDPixel(centerX - deltaX, centerY - deltaY, color8Bit, true)
+            self:setDPixel(centerX + deltaX, centerY + deltaY, aColor)
+            self:setDPixel(centerX - deltaX, centerY + deltaY, aColor)
+            self:setDPixel(centerX + deltaX, centerY - deltaY, aColor)
+            self:setDPixel(centerX - deltaX, centerY - deltaY, aColor)
         else
-            self:setPixel(centerX + deltaX, centerY + deltaY, " ", color8Bit, nil, true)
-            self:setPixel(centerX - deltaX, centerY + deltaY, " ", color8Bit, nil, true)
-            self:setPixel(centerX + deltaX, centerY - deltaY, " ", color8Bit, nil, true)
-            self:setPixel(centerX - deltaX, centerY - deltaY, " ", color8Bit, nil, true)
+            self:setPixel(centerX + deltaX, centerY + deltaY, " ", aColor, nil)
+            self:setPixel(centerX - deltaX, centerY + deltaY, " ", aColor, nil)
+            self:setPixel(centerX + deltaX, centerY - deltaY, " ", aColor, nil)
+            self:setPixel(centerX - deltaX, centerY - deltaY, " ", aColor, nil)
         end
     end
     local centerX = math.floor(x + width / 2)
@@ -352,28 +332,23 @@ function image:drawEllipse(nX, nY, nX2, nY2, aColor, dPixel, bit8)
     local quarter = math.floor(radiusX2 / math.sqrt(radiusX2 + radiusY2))
     for x = 0, quarter do
         local y = radiusY * math.sqrt(1 - x * x / radiusX2)
-        setPixels(centerX, centerY, x, math.floor(y), color)
+        setPixels(centerX, centerY, x, math.floor(y))
     end
     quarter = math.floor(radiusY2 / math.sqrt(radiusX2 + radiusY2))
     for y = 0, quarter do
         x = radiusX * math.sqrt(1 - y * y / radiusY2)
-        setPixels(centerX, centerY, math.floor(x), y, color)
+        setPixels(centerX, centerY, math.floor(x), y)
     end
 end
 
-function image:drawText(x, y, bColor, tColor, text, bit8, symbol)
+function image:drawText(x, y, bColor, tColor, text, symbol)
     local index
-    local newBColor, newTColor = bColor, tColor
-    if not bit8 then
-        if bColor and bColor ~= -1 then newBColor = color.to8Bit(bColor) end
-        if tColor then newTColor = color.to8Bit(tColor) end
-    end
     for i = 1, unicode.len(text) do
         index = image.XYToIndex(x + i - 1, y, self.width)
-        if bColor and bColor ~= -1 then self.data[index + 1] = newBColor
+        if bColor and bColor ~= -1 then self.data[index + 1] = bColor
         elseif self.data[index] == symbol then self.data[index + 1] = -1 end
         self.data[index] = unicode.sub(text, i, i)
-        if tColor then self.data[index + 2] = newTColor end
+        if tColor then self.data[index + 2] = tColor end
     end
 end
 
@@ -391,10 +366,23 @@ function image:drawImage(x, y, imageToDraw)
     end
 end
 
-function image:optimizeTo8Bit()
-    for i = 1, #self.data, 3 do
-        self.data[i + 1] = color.to8Bit(self.data[i + 1])
-        self.data[i + 2] = color.to8Bit(self.data[i + 2])
+function image:to8Bit()
+    if not self.bit8 then
+        for i = 1, #self.data, 3 do
+            self.data[i + 1] = color.to8Bit(self.data[i + 1])
+            self.data[i + 2] = color.to8Bit(self.data[i + 2])
+        end
+        self.bit8 = true
+    end
+end
+
+function image:to24Bit()
+    if self.bit8 then
+        for i = 1, #self.data, 3 do
+            self.data[i + 1] = color.to24Bit(self.data[i + 1])
+            self.data[i + 2] = color.to24Bit(self.data[i + 2])
+        end
+        self.bit8 = false
     end
 end
 
@@ -402,16 +390,22 @@ function image:save(path)
     fs.makeDirectory(path)
     if fs.exists(path) then fs.remove(path) end
     local file = io.open(path, "w")
-    file:write(sr.serialize(self))
+    if self.bit8 then
+        file:write(sr.serialize(self))
+    else
+        self:to8Bit()
+        file:write(sr.serialize(self))
+        self:to24Bit()
+    end
     file:close()
 end
 
 function image:draw(x, y)
     if self.compressed then
         for bColor, data1 in pairs(self.data) do
-            if bColor ~= -1 then gpu.setBackground(color.to24Bit(bColor)) end
+            if bColor ~= -1 then gpu.setBackground(bColor) end
             for tColor, data2 in pairs(data1) do
-                if tColor ~= -1 then gpu.setForeground(color.to24Bit(tColor)) end
+                if tColor ~= -1 then gpu.setForeground(tColor) end
                 for i = 1, #data2, 3 do
                     gpu.set(x + data2[i] - 1, y + data2[i + 1] - 1, data2[i + 2])
                 end
