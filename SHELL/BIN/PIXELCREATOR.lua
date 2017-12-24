@@ -313,7 +313,7 @@ touch = function(obj, x, y)
             local index = image.XYToIndex(x - canvas.globalX + 1, y - canvas.globalY + 1, canvas.image.width)
             sColor = canvas.image.data[index + 1]
             sSymbol = canvas.image.data[index]
-            dColor = color.to8Bit(canvas.currBColor)
+            dColor = canvas.currBColor
             fillCheck(x - canvas.globalX + 1, y - canvas.globalY + 1)
             sColor, dColor, sSymbol, fState = nil, nil, nil, nil
             ui.draw(mainBox)
