@@ -10,7 +10,7 @@ local inet      = require("IINTERNET")
 local file      = require("FILE")
 local comp      = require("computer")
 
-_G._UIVERSION = 5
+_G._UIVERSION = 4
 
 local mainBox, itemsBox, upBar, searchTB, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
@@ -389,7 +389,7 @@ function execute(args, x, y, button)
             drawAll = true
         elseif args[1] == 4 then                                -- APPLICATION
             if fs.exists(deskPath .. args[2] .. ".app/program.lua") then
-                system.execute(deskPath .. args[2] .. ".app/program.lua", true)
+                system.execute(deskPath .. args[2] .. ".app/program.lua")
                 drawAll = true
             end
         elseif args[1] == 5 then
