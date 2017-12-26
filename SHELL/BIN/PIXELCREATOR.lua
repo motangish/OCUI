@@ -74,7 +74,7 @@ local function newFile()
         local w, h = tonumber(wTB.text), tonumber(hTB.text)
         if w and h then
             if not canvas then
-                canvas = ui.canvas(1, 1, 0, 0xFFFFFF, " ", image.new("canvas", w, h))
+                canvas = ui.canvas(0, 0, 0, 0xFFFFFF, " ", image.new("canvas", w, h))
                 canvas.currTransColor = 0x1C1C1C
                 cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xDCDCDC, canvas, {hideBar=w>=160})
                 mainBox:addObj(cScrollBar)
@@ -83,7 +83,7 @@ local function newFile()
                 canvas.image = image.new("canvas", w, h)
                 cScrollBar.args.hideBar = w >= 160
             end
-            canvas.x, canvas.y = ui.centerSquare(w, h)
+            canvas.x, canvas.y = ui.centerSquare(w + 1, h + 1)
             canvas.width, canvas.height = w, h
             canvas.image:fill(1, 1, w, h, -1, 0xFFFFFF, 0)
             cancel()
@@ -118,8 +118,8 @@ local function openFile(path)
                 mainBox:removeObj(cScrollBar)
                 drawing, currBColor, currTColor, currSymbol = canvas.drawing, canvas.currBColor, canvas.currTColor, canvas.currSymbol
             end
-            canvas = ui.canvas(1, 1, currBColor or 0, currTColor or 0xFFFFFF, currSymbol or " ", image.load(text))
-            canvas.x, canvas.y = ui.centerSquare(canvas.image.width, canvas.image.height)
+            canvas = ui.canvas(0, 0, currBColor or 0, currTColor or 0xFFFFFF, currSymbol or " ", image.load(text))
+            canvas.x, canvas.y = ui.centerSquare(canvas.image.width + 1, canvas.image.height + 1)
             canvas.drawing, canvas.currTransColor = drawing, 0x1C1C1C
             cScrollBar = ui.scrollbar(1, 2, width, height - 1, 0x1C1C1C, 0xDCDCDC, canvas, {hideBar=canvas.image.width>=160})
             mainBox:addObj(cScrollBar)
