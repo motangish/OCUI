@@ -187,14 +187,14 @@ local function drawStandartButton(obj)
         tColor = obj.bColor
     end
     if obj.args.alpha then
-        buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha, false)
+        buffer.fillBlend(obj.globalX, obj.globalY, obj.width, obj.height, bColor, obj.args.alpha)
     else
-        buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil, false)
+        buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, symbol, bColor, nil)
     end
     if obj.args.indent then
         buffer.drawText(obj.globalX + obj.args.indent, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
     else
-        buffer.drawText(obj.globalX + obj.width / 2 - unicode.len(obj.text) / 2, math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
+        buffer.drawText(obj.globalX + math.floor(obj.width / 2 - unicode.len(obj.text) / 2), math.floor(obj.globalY + obj.height / 2), nil, tColor, obj.text)
     end
 end
 
@@ -527,7 +527,7 @@ end
 local function drawScrollbar(obj)
     buffer.fill(obj.globalX, obj.globalY, obj.width, obj.height, " ", obj.bColor, obj.tColor)
     buffer.setDrawing(obj.globalX, obj.globalY, obj.width, obj.height)
-    ui.drawObject(obj.object, obj.globalX, obj.globalY)
+    ui.drawObject(obj.object, obj.globalX + 1, obj.globalY + 1)
     buffer.setDefaultDrawing()
     local lineHeight = math.floor(obj.height / (obj.object.height / obj.height))
     if lineHeight < 1 then lineHeight = 1 end
@@ -555,7 +555,7 @@ local function scrollbarScroll(obj, position, side)
         elseif obj.position < 1 then
             obj.position = 1
         end
-        obj.object.y = 1 - math.floor((obj.position - 1) * (obj.object.height / obj.height))
+        obj.object.y = -math.floor((obj.position - 1) * (obj.object.height / obj.height))
         ui.draw(obj)
     end
 end
