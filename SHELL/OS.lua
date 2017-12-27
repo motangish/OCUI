@@ -45,28 +45,42 @@ local function exitFunc()
 end
 
 local function settingsFunc()
-    local mainWindow, backLabel, imageTB, colorButton, pcancelButton, doneButton
+    local mainWindow, backLabel, iconsLabel, imageTB, colorButton, iconsColorButton, pcancelButton, doneButton
+    local colorSelectionFor = 0
     local function done()
         CFG.config.backColor = colorButton.bColor
+        CFG.config.iconsColor = iconsColorButton.bColor
         if imageTB.text ~= "" then CFG.config.backImage = imageTB.text end
         CFG:save()
         changeBackground = true
         update()
     end
     local function colorSelected(selectedColor)
-        colorButton.bColor = selectedColor
-        colorButton.tColor = color.invert(selectedColor)
-        ui.draw(colorButton)
+    	if colorSelectionFor == 0 then
+        	colorButton.bColor = selectedColor
+        	colorButton.tColor = color.invert(selectedColor)
+        	ui.draw(colorButton)
+        elseif colorSelectionFor == 1 then
+        	iconsColorButton.bColor = selectedColor
+        	iconsColorButton.tColor = color.invert(selectedColor)
+        	ui.draw(iconsColorButton)
+        end
     end
-    mainWindow = ui.window(nil, nil, 40, 11, 0xDCDCDC, 0xCDCDCD, 0, "Настройки", true)
+    local function selectColor(num)
+    	colorSelectionFor = num
+    	system.selectColor(colorSelected)
+    end
+    mainWindow = ui.window(nil, nil, 40, 12, 0xDCDCDC, 0xCDCDCD, 0, "Настройки", true)
     backLabel = ui.label(3, 3, nil, 0, "Фон")
     imageTB = ui.beautifulTextbox(2, 4, 38, 0xC3C3C3, 0x1C1C1C, "Путь к изображению", nil)
-    colorButton = ui.standartButton(2, 7, 38, 2, CFG.config.backColor, 0, "", system.selectColor, {touchArgs=colorSelected})
-    cancelButton = ui.beautifulButton(2, 9, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
-    doneButton = ui.beautifulButton(27, 9, 13, 3, 0xDCDCDC, 0x006600, "Сохранить", done)
+    colorButton = ui.standartButton(2, 7, 38, 2, CFG.config.backColor, 0, "", selectColor, {touchArgs=0})
+    iconsColorButton = ui.standartButton(2, 9, 38, 1, CFG.config.iconsColor, color.invert(CFG.config.iconsColor), "Цвет значков", selectColor, {touchArgs=1})
+    cancelButton = ui.beautifulButton(2, 10, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
+    doneButton = ui.beautifulButton(27, 10, 13, 3, 0xDCDCDC, 0x006600, "Сохранить", done)
     mainWindow:addObj(backLabel)
     mainWindow:addObj(imageTB)
     mainWindow:addObj(colorButton)
+    mainWindow:addObj(iconsColorButton)
     mainWindow:addObj(cancelButton)
     mainWindow:addObj(doneButton)
     ui.draw(mainWindow)
@@ -248,7 +262,7 @@ local function addItem(name, type, icon, func, args)
             local resizedText = ui.resizeText(name, 14)
             local newArgs = args
             newArgs.num = itemNum
-            itemsBox:addObj(ui.label(x+ui.centerText(resizedText, 14) - 2, y+6, nil, 0, resizedText))
+            itemsBox:addObj(ui.label(x+ui.centerText(resizedText, 14) - 2, y+6, nil, CFG.config.iconsColor, resizedText))
             itemsBox:addObj(ui.imagedButton(x, y, icon, func, {touchArgs=newArgs}))
         end
     end
@@ -416,6 +430,7 @@ end
 
 if CFG.config == nil then CFG.config = {} end
 if CFG.config.backColor == nil then CFG.config.backColor = 0x006D80 end
+if CFG.config.iconsColor == nil then CFG.config.iconsColor = 0xFFFFFF end
 CFG:save()
 
 inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/version.cfg", "/tmp/version.cfg")
