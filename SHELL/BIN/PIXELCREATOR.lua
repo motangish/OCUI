@@ -52,10 +52,16 @@ local function disableTools()
 end
 
 local function fileFunc()
+    fileButton:toggle(true)
+    fileCM:draw()
+    fileButton:draw()
     fileCM:show()
 end
 
 local function editFunc()
+    editButton:toggle(true)
+    editCM:draw()
+    editButton:draw()
     editCM:show()
 end
 
@@ -414,9 +420,9 @@ local function init()
     mainBox = ui.box(1, 1, width, height, 0x1C1C1C)
     -- BAR
     bar = ui.box(1, 1, width, 1, 0xCDCDCD)
-    fileButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "Файл", fileFunc, {toggling=true})
+    fileButton = ui.standartButton(3, 1, nil, 1, 0xDCDCDC, 0, "Файл", fileFunc, {toggling=true, disableActive=true})
     bar:addObj(fileButton)
-    editButton = ui.standartButton(fileButton.x + fileButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Редактирование", editFunc, {toggling=true, visible=false})
+    editButton = ui.standartButton(fileButton.x + fileButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Редактирование", editFunc, {toggling=true, visible=false, disableActive=true})
     bar:addObj(editButton)
     brushButton = ui.standartButton(editButton.x + editButton.width + 1, 1, nil, 1, 0xDCDCDC, 0, "Кисть", brushFunc, {active=true, toggling=true, visible=false})
     bar:addObj(brushButton)
