@@ -74,7 +74,7 @@ local function settingsFunc()
     backLabel = ui.label(3, 3, nil, 0, "Фон")
     imageTB = ui.beautifulTextbox(2, 4, 38, 0xC3C3C3, 0x1C1C1C, "Путь к изображению", nil)
     colorButton = ui.standartButton(2, 7, 38, 2, CFG.config.backColor, 0, "", selectColor, {touchArgs=0})
-    iconsColorButton = ui.standartButton(2, 9, 38, 1, CFG.config.iconsColor, color.invert(CFG.config.iconsColor), "Цвет значков", selectColor, {touchArgs=1})
+    iconsColorButton = ui.standartButton(2, 9, 38, 1, CFG.config.iconsColor, color.invert(CFG.config.iconsColor), "Цвет названия значков", selectColor, {touchArgs=1})
     cancelButton = ui.beautifulButton(2, 10, 12, 3, 0xDCDCDC, 0x660000, "Отмена", update)
     doneButton = ui.beautifulButton(27, 10, 13, 3, 0xDCDCDC, 0x006600, "Сохранить", done)
     mainWindow:addObj(backLabel)
@@ -263,7 +263,7 @@ local function addItem(name, type, icon, func, args)
             local newArgs = args
             newArgs.num = itemNum
             itemsBox:addObj(ui.label(x+ui.centerText(resizedText, 14) - 2, y+6, nil, CFG.config.iconsColor, resizedText))
-            itemsBox:addObj(ui.imagedButton(x, y, icon, func, {touchArgs=newArgs}))
+            itemsBox:addObj(ui.imagedButton(x, y, icon, func, {touchArgs=newArgs, disableActive=true}))
         end
     end
 end
@@ -392,6 +392,7 @@ end
 
 function execute(args, x, y, button)
     if button == 0 or button == nil then                -- LEFT MOUSE BUTTON
+        itemsBox.objects[args.num * 2]:flash()
         local drawAll = false
         if args[1] == 1 then                                    -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
@@ -399,7 +400,7 @@ function execute(args, x, y, button)
         elseif args[1] == 2 then                                -- FOLDER
             deskPath = deskPath .. args[2] .. "/"
         elseif args[1] == 3 then                                -- LUA
-            system.execute(deskPath .. args[2], true)
+            system.execute(deskPath .. args[2])
             drawAll = true
         elseif args[1] == 4 then                                -- APPLICATION
             if fs.exists(deskPath .. args[2] .. ".app/program.lua") then
@@ -412,9 +413,9 @@ function execute(args, x, y, button)
         end
         update(drawAll)
     elseif button == 1 then                             -- RIGHT MOUSE BUTTON
-        itemsBox.objects[args.num * 2]:toggle()
+        itemsBox.objects[args.num * 2]:toggle(true)
         clickedItemText = args[2]
-        if args[1] == 1 or args[1] == 3 or args[1] == 5 then    -- DEFAULT,LUA,IMAGE FILE
+        if args[1] == 1 or args[1] == 3 or args[1] == 5 then    -- DEFAULT, LUA, IMAGE FILE
             defaultItemCM.globalX, defaultItemCM.globalY = x, y
             defaultItemCM:show()
         elseif args[1] == 2 then                                -- FOLDER
