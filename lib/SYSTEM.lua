@@ -70,26 +70,19 @@ function system.selectColor(selectedFunc)
     ui.draw(colorWindow)
 end
 
-function system.error(message, disableExitButton)
+function system.error(message)
     if message then
-        local mainWindow, oldImage, cLabel, cExit, cDone
+        local mainWindow, oldImage, cLabel, cDone
         local checkingArgs, checkingObject = ui.args, ui.checkingObject
         local function done()
             buffer.drawImage(mainWindow.globalX, mainWindow.globalY, oldImage)
             ui.checkingObject, ui.args = checkingObject, checkingArgs
             buffer.draw()
         end
-        local function exit()
-            done()
-        end
         mainWindow = ui.window(nil, nil, 128, 7, 0xDCDCDC, 0xCDCDCD, 0, "Произошла ошибка!", true)
         oldImage = buffer.crop(mainWindow.globalX, mainWindow.globalY, mainWindow.width + 1, mainWindow.height + 1)
         cLabel = ui.label(3, 3, nil, 0x660000, message)
-        if not disableExitButton then
-            cExit = ui.beautifulButton(2, 5, 15, 3, 0xDCDCDC, 0x660000, "Выход", exit)
-            mainWindow:addObj(cExit)
-        end
-        cDone = ui.beautifulButton(112, 5, 16, 3, 0xDCDCDC, 0x006600, "Продолжить", done)
+        cDone = ui.beautifulButton(113, 5, 15, 3, 0xDCDCDC, 0x006600, "Завершить", done)
         mainWindow:addObj(cLabel)
         mainWindow:addObj(cDone)
         ui.draw(mainWindow)

@@ -198,19 +198,19 @@ local function drawStandartButton(obj)
     end
 end
 
-local function toggleButton(obj)
+local function toggleButton(obj, notDrawWhenToggling)
     if obj.args.active then
         obj.args.active = false
     else
         obj.args.active = true
     end
-    ui.draw(obj)
+    if notDrawWhenToggling then obj:draw() else ui.draw(obj) end
 end
 
 local function flashButton(obj, delay)
     if obj.args.toggling then
         if obj.args.active then obj.args.active = false else obj.args.active = true end
-        ui.draw(obj)
+        if not obj.args.notDrawWhenToggling then ui.draw(obj) end
     else
        obj.args.active = true
        ui.draw(obj)
@@ -437,10 +437,10 @@ local function drawContextMenu(obj)
     end
 end
 
-local function doContextMenu(obj)
+local function doContextMenu(obj, doNotDraw)
     local state = true
     obj.args.visible = true
-    drawContextMenu(obj)
+    if not doNotDraw then drawContextMenu(obj) end
     buffer.draw()
     while state do
         local e = {event.pull()}
@@ -464,8 +464,8 @@ local function doContextMenu(obj)
             if not clickedObj or not (clickedObj[1] == -1) then
                 obj.args.visible, state = false, false
                 buffer.drawImage(obj.globalX, obj.globalY, obj.image)
-                buffer.draw()
                 if obj.args.closing then obj.args.closing() end
+                buffer.draw()
                 if clickedObj and clickedObj[2] then clickedObj[2](clickedObj[3]) end
             end
         end
@@ -657,7 +657,7 @@ function ui.handleEvents(obj, args)
                 end
             end
             if e[1] == "touch" then
-                if e[5] == 0 and (newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON
+                if e[5] == 0 and not newClickedObj.args.disableActive and (newClickedObj.id == ui.ID.STANDART_BUTTON or newClickedObj.id == ui.ID.BEAUTIFUL_BUTTON
                 or newClickedObj.id == ui.ID.IMAGED_BUTTON) then newClickedObj:flash()
                 elseif newClickedObj.id == ui.ID.STANDART_TEXTBOX or newClickedObj.id == ui.ID.BEAUTIFUL_TEXTBOX then newClickedObj:write()
                 elseif newClickedObj.id == ui.ID.STANDART_CHECKBOX then newClickedObj:check()
