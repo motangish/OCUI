@@ -88,9 +88,26 @@ function ui.resizeText(text, max)
     if unicode.len(text) > max then return unicode.sub(text, 1, max - 1) .. "…" else return text end
 end
 
+function ui.strfind(str, pattern, init, plain)
+    if init then
+        if init < 0 then
+            init = -#unicode.sub(str,init)
+        elseif init > 0 then
+            init = #unicode.sub(str, 1, init - 1) + 1
+        end
+    end
+    a, b = string.find(str, pattern, init, plain)
+    if a then
+        local ap, bp = str:sub(1, a - 1), str:sub(a,b)
+        a = unicode.len(ap) + 1
+        b = a + unicode.len(bp) - 1
+        return a, b
+    else return a end
+end
+
 function ui.getFormatOfFile(path)
   local fileName = fs.name(path)
-  local first, second = string.find(fileName, "(.)%.[%d%w]*$")
+  local first, second = ui.strfind(fileName, "(.)%.[%d%w]*$")
   if first then return unicode.sub(fileName, first + 1, -1) end
 end
 
