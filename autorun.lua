@@ -1,1 +1,4 @@
-pcall(loadfile("/SHELL/OS.lua"))
+local system = require("SYSTEM")
+
+system.initialize()
+system.execute("/SHELL/OS.lua")
