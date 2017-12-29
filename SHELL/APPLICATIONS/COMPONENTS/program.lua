@@ -28,6 +28,10 @@ updateCmps = function()
             elseif name == "modem" then newName = "Modem"
             elseif name == "keyboard" then newName = "Keyboard"
             elseif name == "screen" then newName = "Screen"
+            elseif name == "redstone" then newName = "Redstone"
+            elseif name == "disk_drive" then newName = "Disk Drive"
+            elseif name == "br_reactor" then newName = "BR Reactor"
+            elseif name == "br_turbine" then newName = "BR Turbine"
         end
         cmpBox:addObj(ui.standartButton(3, newY, 18, 1, 0xCDCDCD, 0x1C1C1C, newName, displayCmp, {touchArgs={newName, address}}))
         cmpBox:addObj(ui.label(22, newY, nil, 0x1C1C1C, address))
