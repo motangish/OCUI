@@ -230,7 +230,8 @@ local function prevFolderFunc()
 end
 
 local function toFolder(path)
-    deskPath = path
+    searchTB.text = ""
+    deskPath, searchText = path, ""
     update()
 end
 
@@ -275,7 +276,7 @@ end
 
 local function updateSystem()
     inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/ui_installer.lua", "/tmp/ui_installer.lua")
-    system.execute("/tmp/ui_installer.lua", true)
+    system.execute("/tmp/ui_installer.lua")
 end
 
 local function reloadItems()
