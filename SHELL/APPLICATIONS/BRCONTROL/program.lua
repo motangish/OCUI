@@ -79,6 +79,7 @@ updateCmpProps = function(name, address)
         cmpPropBox:addObj(activityB)
     end
     if currName and currAddress then
+        fuelAmountMax = currReactor.getFuelAmountMax()
         fuelAmount, reactorActive = currReactor.getFuelAmount(), currReactor.getActive()
         fuelTemp, casingTemp = currReactor.getFuelTemperature(), currReactor.getCasingTemperature()
         if reactorActive then
@@ -87,6 +88,7 @@ updateCmpProps = function(name, address)
             cmpPropBox.color, activityB.bColor, activityB.tColor, activityB.text, activityB.width = 0x660000, 0x660000, 0x006600, "Включить реактор", 20
         end
         fuelAmountL:setText("Fuel Amount: " .. math.floor(fuelAmount) .. " mB")
+        fuelAmountPB.max = fuelAmountMax
         fuelAmountPB:setProgress(fuelAmount)
         fuelTempL:setText("Fuel Temp:   " .. math.floor(fuelTemp) .. " C")
         fuelTempPB:setProgress(fuelTemp)
