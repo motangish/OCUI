@@ -4,7 +4,7 @@ local image  = require("IMAGE")
 local buffer = require("IBUFFER")
 local gpu    = require("component").gpu
 
-local colorWindow = ui.window(nil, nil, 64, 36, 0xDCDCDC, 0xCDCDCD, 0, "Выберите цвет", true)
+local colorWindow = ui.window(nil, nil, 64, 36, 0xDCDCDC, 0xCDCDCD, 0, "Цветовая палитра", true)
 local oldImage = buffer.crop(colorWindow.globalX, colorWindow.globalY, colorWindow.width + 1, colorWindow.height + 1)
 local palette = image.new("palette", 64, 32)
 local selectedColor = 0xFFFFFF
