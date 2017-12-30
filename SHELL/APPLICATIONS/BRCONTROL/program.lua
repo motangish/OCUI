@@ -1,6 +1,5 @@
 local system = require("SYSTEM")
 local ui     = require("UI")
-local cmp    = require("component")
 
 local window, cmpBox, cmpPropBox, cmpPropBoxSB, cmpBoxSB, updateButton, closeButton
 local fuelAmountPB, fuelTempPB, casingTempPB, fuelAmountL, fuelTempL, casingTempL, energyProdL, fuelConsL, enableB, activityB
@@ -45,7 +44,7 @@ end
 updateCmpProps = function(name, address)
     if name and address then
         currName, currAddress = name, address
-        currReactor = cmp.proxy(cmp.get(currAddress))
+        currReactor = system.getComponent(currAddress)
         fuelAmoundMax = currReactor.getFuelAmountMax()
         fuelAmount, reactorActive = currReactor.getFuelAmount(), currReactor.getActive()
         fuelTemp, casingTemp = currReactor.getFuelTemperature(), currReactor.getCasingTemperature()
@@ -66,8 +65,8 @@ updateCmpProps = function(name, address)
         else
             cmpPropBox.color, activityB.bColor, activityB.tColor, activityB.text, activityB.width = 0x660000, 0x660000, 0x006600, "Включить", 12
         end
-        cmpPropBox:addObj(ui.label(53, 14, nil, 0xF0F0F0, "RF/tic"))
-        cmpPropBox:addObj(ui.label(53, 15, nil, 0xF0F0F0, "mB/tic"))
+        cmpPropBox:addObj(ui.label(55, 14, nil, 0xF0F0F0, "RF/t"))
+        cmpPropBox:addObj(ui.label(55, 15, nil, 0xF0F0F0, "mB/t"))
         cmpPropBox:addObj(fuelAmountL)
         cmpPropBox:addObj(fuelAmountPB)
         cmpPropBox:addObj(fuelTempL)
@@ -120,8 +119,6 @@ cmpBox       = ui.box(0, 0, 55, 100, 0xC3C3C3)
 cmpPropBox   = ui.box(0, 0, 60, 29, 0xDCDCDC)
 cmpBoxSB     = ui.scrollbar(1, 2, 60, 5, 0xC3C3C3, 0x1C1C1C, cmpBox)
 cmpPropBoxSB = ui.scrollbar(1, 7, 60, 29, 0xDCDCDC, 0x1C1C1C, cmpPropBox)
-
---0x99B680
 
 updateWindow()
 ui.handleEvents(window, {delay=0.5, whileFunc=onUpdate})
