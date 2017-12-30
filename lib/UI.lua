@@ -658,7 +658,7 @@ function ui.handleEvents(obj, args)
     ui.checkingObject = obj
     ui.args = args
     while ui.eventHandling do
-        local e = {event.pull()}
+        local e = {event.pull(ui.args.delay)}
         local clickedObj
         if e[3] and e[4] then clickedObj = ui.checkClick(ui.checkingObject, e[3], e[4]) end
         if clickedObj and clickedObj.args.enabled and clickedObj.args.visible then
@@ -751,7 +751,8 @@ function ui.handleEvents(obj, args)
             end
             buffer.setDefaultDrawing()
         end
-    end
+        if ui.args.whileFunc then ui.args.whileFunc() end
+    end 
 end
 
 return ui

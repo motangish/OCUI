@@ -143,4 +143,8 @@ function system.getComponentMethods(address)
     return methods
 end
 
+function system.getComponent(address)
+    return cmp.proxy(cmp.get(address))
+end
+
 return system
