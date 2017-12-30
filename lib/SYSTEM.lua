@@ -1,10 +1,11 @@
+local cmp       = require("component")
 local fs        = require("filesystem")
 local event     = require("event")
 local image     = require("IMAGE")
 local buffer    = require("IBUFFER")
 local color     = require("COLOR")
 local ui        = require("UI")
-local gpu       = require("component").gpu
+local gpu       = cmp.gpu
 
 local system = {}
 
@@ -85,6 +86,7 @@ function system.error(message)
         cDone = ui.beautifulButton(113, 5, 15, 3, 0xDCDCDC, 0x006600, "Завершить", done)
         mainWindow:addObj(cLabel)
         mainWindow:addObj(cDone)
+        buffer.setDefaultDrawing()
         ui.draw(mainWindow)
         ui.handleEvents(mainWindow)
     end
@@ -102,12 +104,43 @@ function system.execute(path, disableExitButton)
     end
 end
 
-function system.print2DArray(arr)
-  for i = 1, #arr do
-      if arr[i] ~= nil then
-          print(arr[i])
-      end
-  end
+function system.getComponents(filter)
+    local cmps = {}
+    for address, name in cmp.list() do
+        local newName = name
+        if name == "filesystem" then newName = "File System"
+            elseif name == "eeprom" then newName = "Bios"
+            elseif name == "computer" then newName = "Computer"
+            elseif name == "internet" then newName = "Internet Card"
+            elseif name == "gpu" then newName = "Graphics Card"
+            elseif name == "modem" then newName = "Modem"
+            elseif name == "keyboard" then newName = "Keyboard"
+            elseif name == "screen" then newName = "Screen"
+            elseif name == "redstone" then newName = "Redstone"
+            elseif name == "disk_drive" then newName = "Disk Drive"
+            elseif name == "br_reactor" then newName = "BR Reactor"
+            elseif name == "br_turbine" then newName = "BR Turbine"
+        end
+        if filter then
+            for i = 1, #filter do
+                if newName == filter[i] then
+                    table.insert(cmps, {newName, address})
+                    break
+                end
+            end
+        else
+            table.insert(cmps, {newName, address})
+        end
+    end
+    return cmps
+end
+
+function system.getComponentMethods(address)
+    local methods = {}
+    for method, addit in pairs(cmp.methods(address)) do
+        table.insert(methods, {method, addit})
+    end
+    return methods
 end
 
 return system
