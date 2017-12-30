@@ -1,5 +1,5 @@
-local cmp = require("component")
-local ui = require("UI")
+local system = require("SYSTEM")
+local ui     = require("UI")
 
 local window, cmpBox, cmpPropBox, cmpPropBoxSB, cmpBoxSB, updateButton, closeButton
 local updateCmps, updateCmpProps, updateWindow
@@ -16,29 +16,14 @@ end
 
 updateCmps = function()
     cmpBox:cleanObjects()
-    local newY = 2
-    local cmps = 0
-    for address, name in cmp.list() do
-        local newName = name
-        if name == "filesystem" then newName = "File System"
-            elseif name == "eeprom" then newName = "Bios"
-            elseif name == "computer" then newName = "Computer"
-            elseif name == "internet" then newName = "Internet Card"
-            elseif name == "gpu" then newName = "Graphics Card"
-            elseif name == "modem" then newName = "Modem"
-            elseif name == "keyboard" then newName = "Keyboard"
-            elseif name == "screen" then newName = "Screen"
-            elseif name == "redstone" then newName = "Redstone"
-            elseif name == "disk_drive" then newName = "Disk Drive"
-            elseif name == "br_reactor" then newName = "BR Reactor"
-            elseif name == "br_turbine" then newName = "BR Turbine"
-        end
-        cmpBox:addObj(ui.standartButton(3, newY, 18, 1, 0xCDCDCD, 0x1C1C1C, newName, displayCmp, {touchArgs={newName, address}}))
-        cmpBox:addObj(ui.label(22, newY, nil, 0x1C1C1C, address))
+    local newY, cmps = 2, 0
+    local cmpsArr = system.getComponents()
+    for i = 1, #cmpsArr do
+        cmpBox:addObj(ui.standartButton(3, newY, 18, 1, 0xCDCDCD, 0x1C1C1C, cmpsArr[i][1], displayCmp, {touchArgs={cmpsArr[i][1], cmpsArr[i][2]}}))
+        cmpBox:addObj(ui.label(22, newY, nil, 0x1C1C1C, cmpsArr[i][2]))
         newY, cmps = newY + 2, cmps + 1
     end
     cmpBox.height = cmps * 2 + 1
-    
     if drawWindow then
         ui.draw(window)
         drawWindow = false
@@ -49,15 +34,14 @@ updateCmpProps = function(name, address)
     cmpPropBox:cleanObjects()
     cmpPropBox:addObj(ui.label(3, 2, nil, 0, name))
     cmpPropBox:addObj(ui.label(3, 3, nil, 0, address))
-    local methodY = 5
-    local funcs = 0
-    for method, addit in pairs(cmp.methods(address)) do
-        cmpPropBox:addObj(ui.label(5, methodY, nil, 0x1C1C1C, method))
-        cmpPropBox:addObj(ui.label(50, methodY, nil, 0x1C1C1C, tostring(addit)))
+    local methodY, funcs = 5, 0
+    local funcsArr = system.getComponentMethods(address)
+    for i = 1, #funcsArr do
+        cmpPropBox:addObj(ui.label(5, methodY, nil, 0x1C1C1C, funcsArr[i][1]))
+        cmpPropBox:addObj(ui.label(50, methodY, nil, 0x1C1C1C, tostring(funcsArr[i][2])))
         methodY, funcs = methodY + 1, funcs + 1
     end
-    cmpPropBox.height = funcs + 5
-    cmpPropBox.y, cmpPropBoxSB.position = 0, 1
+    cmpPropBox.y, cmpPropBoxSB.position, cmpPropBox.height = 0, 1, funcs + 5
     ui.draw(window)
 end
 
