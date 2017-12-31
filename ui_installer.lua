@@ -37,7 +37,7 @@ local file = io.open("/tmp/install_files.cfg", "r")
 data = sr.unserialize(file:read("*a"))
 file:close()
 
-filesCount = #data.libs + #data.icons + #data.bin + #data.pictures + #data.other + (#data.apps * 2)
+filesCount = #data.libs + #data.icons + #data.bin + #data.other + (#data.apps * 2)
 
 init()
 ui.draw(mainWindow)
@@ -57,12 +57,6 @@ end
 
 for i = 1, #data.bin do
     download("/SHELL/BIN/" .. data.bin[i] .. ".lua")
-    filesDownloaded = filesDownloaded + 1
-    printPercent()
-end
-
-for i = 1, #data.pictures do
-    download("/SHELL/PICTURES/" .. data.pictures[i] .. ".bpix")
     filesDownloaded = filesDownloaded + 1
     printPercent()
 end
