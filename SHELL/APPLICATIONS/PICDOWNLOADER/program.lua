@@ -44,7 +44,9 @@ ui.draw(mainWindow)
 ui.checkingObject, ui.args = nil, nil
 
 for i = 1, #data.pictures do
-    download("/SHELL/PICTURES/" .. data.pictures[i] .. ".bpix")
+    if not fs.exists("/SHELL/PICTURES/" .. data.pictures[i] .. ".bpix") then
+        download("/SHELL/PICTURES/" .. data.pictures[i] .. ".bpix")
+    end
     filesDownloaded = filesDownloaded + 1
     printPercent()
 end
