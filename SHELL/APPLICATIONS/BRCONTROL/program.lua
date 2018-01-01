@@ -2,9 +2,11 @@ local system = require("SYSTEM")
 local ui     = require("UI")
 
 local window, cmpBox, cmpPropBox, cmpPropBoxSB, cmpBoxSB, updateButton, closeButton
-local fuelAmountPB, fuelTempPB, casingTempPB, fuelAmountL, fuelTempL, casingTempL, energyProdL, fuelConsL, rfL, mbL, enableB, activityB
+local fuelAmountPB, fuelTempPB, casingTempPB, fuelAmountL, fuelTempL, casingTempL, energyProdL, fuelConsL, rfL, mbL, enableB, activityB, passTB
 local updateCmps, updateCmpProps, updateWindow
 local drawWindow = true
+
+local pass = 10 % 3
 
 local currReactor, currName, currAddress, fuelAmount, fuelAmountMax, fuelTempMax, casingTempMax, fuelTemp, casingTemp, fuelConsumed, reactorActive
 
@@ -18,10 +20,12 @@ local function displayCmp(args)
 end
 
 local function setReactorActivity()
-    if reactorActive then
-        currReactor.setActive(false)
-    else
-        currReactor.setActive(true)
+    if tonumber(passTB.text) == pass then
+        if reactorActive then
+            currReactor.setActive(false)
+        else
+            currReactor.setActive(true)
+        end
     end
 end
 
@@ -74,6 +78,7 @@ updateCmpProps = function(name, address)
         rfL          = ui.label(55, 14, nil, 0xF0F0F0, "RF/t")
         mbL          = ui.label(55, 15, nil, 0xF0F0F0, "mB/t")
         activityB    = ui.beautifulButton(3, 17, nil, 3, 0x006600, 0xFFFFFF, "Включить", setReactorActivity)
+        passTB       = ui.beautifulTextbox(39, 17, 20, 0xDCDCDC, 0x1C1C1C, "Введите пароль", 20)
         if reactorActive then
             cmpPropBox.color, activityB.bColor, activityB.tColor, activityB.text, activityB.width = 0x006600, 0x006600, 0x660000, "Выключить", 13
         else
@@ -90,6 +95,7 @@ updateCmpProps = function(name, address)
         cmpPropBox:addObj(energyProdL)
         cmpPropBox:addObj(fuelConsL)
         cmpPropBox:addObj(activityB)
+        cmpPropBox:addObj(passTB)
     end
     if currName and currAddress then
         getProps()
@@ -108,7 +114,7 @@ updateCmpProps = function(name, address)
         elseif currName == "BR Turbine" then
             activityB.text = activityB.text .. " турбину"
             fuelAmountL:setText("Fluid Amount:     " .. math.floor(fuelAmount) .. " mB")
-            fuelTempL:setText("Fluid Flow Rate : " .. math.floor(fuelTemp) .. " mB/t")
+            fuelTempL:setText("Fluid Flow Rate:  " .. math.floor(fuelTemp) .. " mB/t")
             casingTempL:setText("Rotor Speed:      " .. math.floor(casingTemp) .. " RPM")
             fuelConsL:setText("Efficiency        : " .. fuelConsumed)
             mbL:setText("   %")
