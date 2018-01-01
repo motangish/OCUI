@@ -12,8 +12,11 @@ end
 
 function file.open(path)
   local f = io.open(path, "r")
-  local data = f:read("*a")
-  f:close()
+  local data
+  if f then
+      data = f:read("*a")
+      f:close()
+  end
   return data
 end
 
