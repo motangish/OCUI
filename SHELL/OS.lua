@@ -393,7 +393,7 @@ end
 
 function execute(args, x, y, button)
     if button == 0 or button == nil then                -- LEFT MOUSE BUTTON
-        itemsBox.objects[args.num * 2]:flash()
+        if args.num then itemsBox.objects[args.num * 2]:flash() end
         local drawAll = false
         if args[1] == 1 then                                    -- DEFAULT FILE
             os.execute("edit " .. ui.addQuotes(deskPath .. args[2]))
@@ -436,7 +436,7 @@ if CFG.config.iconsColor == nil then CFG.config.iconsColor = 0xFFFFFF end
 CFG:save()
 
 inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/version.cfg", "/tmp/version.cfg")
-newUIVersion = tonumber(file.open("/tmp/version.cfg"))
+newUIVersion = 14--tonumber(file.open("/tmp/version.cfg"))
 fs.makeDirectory(deskPath)
 init()
 ui.draw(mainBox, true)
