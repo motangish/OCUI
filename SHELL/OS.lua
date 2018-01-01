@@ -10,7 +10,7 @@ local inet      = require("IINTERNET")
 local file      = require("FILE")
 local comp      = require("computer")
 
-_G._UIVERSION = 14
+_G._UIVERSION = 15
 
 local mainBox, itemsBox, upBar, searchTB, downBar, shellCM, deskCM, defaultItemCM, folderCM, appCM
 local width, height = 160, 50
