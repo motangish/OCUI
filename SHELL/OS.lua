@@ -67,8 +67,8 @@ local function settingsFunc()
         end
     end
     local function selectColor(num)
-    	colorSelectionFor = num
-    	system.selectColor(colorSelected)
+    colorSelectionFor = num
+    system.selectColor(colorSelected)
     end
     mainWindow = ui.window(nil, nil, 40, 12, 0xDCDCDC, 0xCDCDCD, 0, "Настройки", true)
     backLabel = ui.label(3, 3, nil, 0, "Фон")
@@ -436,7 +436,8 @@ if CFG.config.iconsColor == nil then CFG.config.iconsColor = 0xFFFFFF end
 CFG:save()
 
 inet.download("https://raw.githubusercontent.com/motangish/OCUI/master/version.cfg", "/tmp/version.cfg")
-newUIVersion = 14--tonumber(file.open("/tmp/version.cfg"))
+local fData = file.open("/tmp/version.cfg")
+if fData then newUIVersion = tonumber(fData) else newUIVersion = _G._UIVERSION end
 fs.makeDirectory(deskPath)
 init()
 ui.draw(mainBox, true)
